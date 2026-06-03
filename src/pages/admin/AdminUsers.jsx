@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import SearchIcon from '@mui/icons-material/Search';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import EditIcon from '@mui/icons-material/Edit';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -10,6 +11,15 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+
+  // Modal State
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [detailForm, setDetailForm] = useState({
+    xp: 0,
+    hide_from_leaderboard: false,
+    role: 'user',
+    team_id: '',
+  });
 
   const fetchData = async () => {
     setLoading(true);
@@ -32,38 +42,42 @@ export default function AdminUsers() {
     fetchData();
   }, []);
 
-  const handleTeamChange = async (userId, teamId) => {
-    setUpdatingId(userId);
-    try {
-      const val = teamId === '' ? null : teamId;
-      const { error } = await supabase
-        .from('profiles')
-        .update({ team_id: val })
-        .eq('id', userId);
-
-      if (error) throw error;
-      await fetchData();
-    } catch (err) {
-      console.error(err);
-      alert('Greška prilikom izmjene tima.');
-    } finally {
-      setUpdatingId(null);
-    }
+  const handleOpenDetails = (user) => {
+    setSelectedUser(user);
+    setDetailForm({
+      xp: user.xp || 0,
+      hide_from_leaderboard: user.hide_from_leaderboard || false,
+      role: user.role || 'user',
+      team_id: user.team_id || '',
+    });
   };
 
-  const handleRoleChange = async (userId, newRole) => {
-    setUpdatingId(userId);
+  const handleSaveDetails = async (e) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    setUpdatingId(selectedUser.id);
     try {
+      const newXp = parseInt(detailForm.xp) || 0;
+      const newLevel = Math.floor(newXp / 500) + 1;
+
       const { error } = await supabase
         .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
+        .update({
+          xp: newXp,
+          level: newLevel,
+          hide_from_leaderboard: detailForm.hide_from_leaderboard,
+          role: detailForm.role,
+          team_id: detailForm.team_id === '' ? null : detailForm.team_id,
+        })
+        .eq('id', selectedUser.id);
 
       if (error) throw error;
+      setSelectedUser(null);
       await fetchData();
     } catch (err) {
       console.error(err);
-      alert('Greška prilikom izmjene uloge.');
+      alert('Greška prilikom spremanja detalja korisnika.');
     } finally {
       setUpdatingId(null);
     }
@@ -82,6 +96,9 @@ export default function AdminUsers() {
 
       if (error) throw error;
       await fetchData();
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser(prev => ({ ...prev, is_banned: !isBanned }));
+      }
     } catch (err) {
       console.error(err);
       alert('Greška prilikom promjene statusa blokade.');
@@ -142,9 +159,9 @@ export default function AdminUsers() {
               <th>Uloga</th>
               <th>Tim</th>
               <th>XP / Razina</th>
-              <th>Streak</th>
+              <th>Leaderboard</th>
               <th>Status</th>
-              <th>Uredi</th>
+              <th style={{ width: 220 }}>Akcije</th>
             </tr>
           </thead>
           <tbody>
@@ -179,52 +196,25 @@ export default function AdminUsers() {
                   </div>
                 </td>
                 <td>
-                  <select
-                    value={u.role || 'user'}
-                    onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                    disabled={updatingId === u.id}
-                    style={{
-                      background: 'none',
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      borderRadius: 4,
-                      padding: '4px 8px',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <option value="user">Korisnik</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'capitalize' }}>
+                    {u.role === 'admin' ? '👑 Admin' : 'Korisnik'}
+                  </span>
                 </td>
                 <td>
-                  <select
-                    value={u.team_id || ''}
-                    onChange={(e) => handleTeamChange(u.id, e.target.value)}
-                    disabled={updatingId === u.id}
-                    style={{
-                      background: 'none',
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      borderRadius: 4,
-                      padding: '4px 8px',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    <option value="">Nema tima</option>
-                    {teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.icon} {t.name}
-                      </option>
-                    ))}
-                  </select>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
+                    {u.teams ? `${u.teams.icon} ${u.teams.name}` : 'Nema tima'}
+                  </span>
                 </td>
                 <td>
                   <div style={{ fontWeight: 700, color: 'var(--prisa-orange)' }}>{u.xp || 0} XP</div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>Razina {u.level || 1}</div>
                 </td>
                 <td>
-                  <div style={{ fontWeight: 700 }}>{u.streak || 0} 🔥</div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>Najviše: {u.longest_streak || 0}</div>
+                  {u.hide_from_leaderboard ? (
+                    <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '0.75rem' }}>Skriven 👁️‍🗨️</span>
+                  ) : (
+                    <span style={{ color: 'var(--prisa-teal)', fontWeight: 600, fontSize: '0.75rem' }}>Vidljiv 👁️</span>
+                  )}
                 </td>
                 <td>
                   {u.is_banned ? (
@@ -234,32 +224,29 @@ export default function AdminUsers() {
                   )}
                 </td>
                 <td>
-                  <button
-                    className="btn btn-outline"
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '0.78rem',
-                      borderColor: u.is_banned ? 'var(--prisa-teal)' : '#ef4444',
-                      color: u.is_banned ? 'var(--prisa-teal)' : '#ef4444',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                    onClick={() => handleBanToggle(u.id, u.is_banned)}
-                    disabled={updatingId === u.id}
-                  >
-                    {u.is_banned ? (
-                      <>
-                        <CheckCircleIcon style={{ fontSize: 14 }} />
-                        Odblokiraj
-                      </>
-                    ) : (
-                      <>
-                        <BlockIcon style={{ fontSize: 14 }} />
-                        Blokiraj
-                      </>
-                    )}
-                  </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      className="btn btn-outline"
+                      style={{ padding: '6px 10px', fontSize: '0.78rem' }}
+                      onClick={() => handleOpenDetails(u)}
+                    >
+                      <EditIcon style={{ fontSize: 14, marginRight: 2 }} />
+                      Uredi
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      style={{
+                        padding: '6px 10px',
+                        fontSize: '0.78rem',
+                        borderColor: u.is_banned ? 'var(--prisa-teal)' : '#ef4444',
+                        color: u.is_banned ? 'var(--prisa-teal)' : '#ef4444',
+                      }}
+                      onClick={() => handleBanToggle(u.id, u.is_banned)}
+                      disabled={updatingId === u.id}
+                    >
+                      {u.is_banned ? 'Odblokiraj' : 'Blokiraj'}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -273,6 +260,108 @@ export default function AdminUsers() {
           </tbody>
         </table>
       </div>
+
+      {/* User Details Modal */}
+      {selectedUser && (
+        <div className="dialog-overlay" onClick={() => setSelectedUser(null)}>
+          <div className="dialog-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, marginBottom: 20 }}>
+              👤 Detalji Korisnika: {selectedUser.name}
+            </h2>
+
+            <form onSubmit={handleSaveDetails} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="form-group">
+                <label>Ukupno XP</label>
+                <input
+                  type="number"
+                  value={detailForm.xp}
+                  onChange={(e) => setDetailForm(prev => ({ ...prev, xp: parseInt(e.target.value) || 0 }))}
+                  min={0}
+                />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                  Razina se automatski preračunava (Svakih 500 XP = 1 razina). Trenutna razina: {Math.floor(detailForm.xp / 500) + 1}
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label>Uloga u aplikaciji</label>
+                <select
+                  value={detailForm.role}
+                  onChange={(e) => setDetailForm(prev => ({ ...prev, role: e.target.value }))}
+                  style={{ height: 42 }}
+                >
+                  <option value="user">Korisnik (User)</option>
+                  <option value="admin">Administrator (Admin)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Tim</label>
+                <select
+                  value={detailForm.team_id}
+                  onChange={(e) => setDetailForm(prev => ({ ...prev, team_id: e.target.value }))}
+                  style={{ height: 42 }}
+                >
+                  <option value="">Nema tima</option>
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.icon} {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <input
+                  id="hide_leaderboard_cb"
+                  type="checkbox"
+                  checked={detailForm.hide_from_leaderboard}
+                  onChange={(e) => setDetailForm(prev => ({ ...prev, hide_from_leaderboard: e.target.checked }))}
+                  style={{ width: 'auto', cursor: 'pointer' }}
+                />
+                <label htmlFor="hide_leaderboard_cb" style={{ cursor: 'pointer', marginBottom: 0 }}>
+                  Sakrij korisnika s rang liste (Leaderboard)
+                </label>
+              </div>
+
+              <div style={{
+                background: 'var(--prisa-orange-pastel)',
+                padding: 12,
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8rem',
+                color: 'var(--prisa-orange)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 4
+              }}>
+                <div><strong>🔥 Vatrice (Streak):</strong> {selectedUser.streak || 0} dana</div>
+                <div><strong>🏆 Najveći streak:</strong> {selectedUser.longest_streak || 0} dana</div>
+                <div><strong>📧 Email:</strong> {selectedUser.email}</div>
+                <div><strong>🚫 Status računa:</strong> {selectedUser.is_banned ? 'Blokiran' : 'Aktivan'}</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ padding: '10px 20px', flex: 1 }}
+                  disabled={updatingId !== null}
+                >
+                  {updatingId ? 'Spremanje...' : 'Spremi Promjene'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setSelectedUser(null)}
+                  style={{ flex: 1 }}
+                >
+                  Zatvori
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [pendingQueue, setPendingQueue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState(null);
+  const [arenaEnabled, setArenaEnabled] = useState(false);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -56,6 +57,17 @@ export default function AdminDashboard() {
       if (!queueErr && queueData) {
         setPendingQueue(queueData);
       }
+
+      // 3. Fetch Arena Enabled setting
+      const { data: arenaSetting } = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('key', 'arena_enabled')
+        .single();
+      
+      if (arenaSetting && arenaSetting.value) {
+        setArenaEnabled(arenaSetting.value.enabled === true || arenaSetting.value === true);
+      }
     } catch (err) {
       console.error('Error fetching admin dashboard data:', err);
     } finally {
@@ -66,6 +78,20 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const handleToggleArena = async () => {
+    const newValue = !arenaEnabled;
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .upsert({ key: 'arena_enabled', value: { enabled: newValue } }, { onConflict: 'key' });
+      if (error) throw error;
+      setArenaEnabled(newValue);
+    } catch (err) {
+      console.error(err);
+      alert('Greška pri izmjeni postavke Arene.');
+    }
+  };
 
   const handleApprove = async (submission) => {
     setActioningId(submission.id);
@@ -134,6 +160,40 @@ export default function AdminDashboard() {
       <div className="admin-topbar">
         <h1 className="admin-page-title">Nadzorna ploča</h1>
         <button className="btn btn-outline" onClick={fetchDashboardData}>Osvježi</button>
+      </div>
+
+      {/* Settings Panel */}
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid rgba(0,0,0,0.06)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '16px 20px',
+        marginBottom: 28,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxShadow: 'var(--shadow-card)'
+      }}>
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-dark)' }}>
+            ⚔️ Postavke Arene (PvP)
+          </h3>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', margin: '4px 0 0' }}>
+            Omogući ili onemogući prikaz Arene i PvP izazova za sve korisnike.
+          </p>
+        </div>
+        <button
+          className={`btn ${arenaEnabled ? 'btn-primary' : 'btn-outline'}`}
+          onClick={handleToggleArena}
+          style={{
+            minWidth: 150,
+            background: arenaEnabled ? 'var(--prisa-orange)' : 'transparent',
+            color: arenaEnabled ? '#fff' : 'var(--text-dark)',
+            borderColor: 'var(--prisa-orange)'
+          }}
+        >
+          {arenaEnabled ? 'Arena: Aktivna ✅' : 'Arena: Ugašena ❌'}
+        </button>
       </div>
 
       {/* Stats Cards */}

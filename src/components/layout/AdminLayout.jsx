@@ -3,6 +3,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
+import CategoryIcon from '@mui/icons-material/Category';
+import StarIcon from '@mui/icons-material/Star';
 import GroupsIcon from '@mui/icons-material/Groups';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -13,6 +15,8 @@ const NAV_ITEMS = [
   { label: 'Korisnici', path: 'users', icon: PeopleIcon },
   { label: 'Navike', path: 'challenges', icon: EmojiEventsIcon },
   { label: 'Izazovi', path: 'achievements', icon: MilitaryTechIcon },
+  { label: 'Kategorije', path: 'categories', icon: CategoryIcon },
+  { label: 'Razine', path: 'levels', icon: StarIcon },
   { label: 'Timovi', path: 'teams', icon: GroupsIcon },
   { label: 'Citati', path: 'quotes', icon: FormatQuoteIcon },
   { label: 'Obavijesti', path: 'notifications', icon: NotificationsIcon },

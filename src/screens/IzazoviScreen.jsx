@@ -15,8 +15,15 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import SelfImprovementIcon from '@mui/icons-material/SelfImprovement';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import HelpOutlineIcon from '@mui/icons-material/Help';
+import WorkIcon from '@mui/icons-material/Work';
+import CodeIcon from '@mui/icons-material/Code';
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
+import BrushIcon from '@mui/icons-material/Brush';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 
 const CATEGORY_ICONS = {
+  // Name mapping
   'Zdravlje': FavoriteIcon,
   'Fitness': FitnessCenterIcon,
   'Financije': SavingsIcon,
@@ -25,6 +32,21 @@ const CATEGORY_ICONS = {
   'Mindfulness': SelfImprovementIcon,
   'Čitanje': AutoStoriesIcon,
   'Prehrana': RestaurantIcon,
+
+  // Icon name mapping
+  'FavoriteIcon': FavoriteIcon,
+  'FitnessCenterIcon': FitnessCenterIcon,
+  'SavingsIcon': SavingsIcon,
+  'SchoolIcon': SchoolIcon,
+  'GroupsIcon': GroupsIcon,
+  'SelfImprovementIcon': SelfImprovementIcon,
+  'AutoStoriesIcon': AutoStoriesIcon,
+  'RestaurantIcon': RestaurantIcon,
+  'WorkIcon': WorkIcon,
+  'CodeIcon': CodeIcon,
+  'SportsEsportsIcon': SportsEsportsIcon,
+  'BrushIcon': BrushIcon,
+  'TravelExploreIcon': TravelExploreIcon,
 };
 
 const VERIFY_LABELS = {
@@ -54,7 +76,7 @@ export default function IzazoviScreen() {
     const fetchData = async () => {
       const [catRes, chalRes, ucRes] = await Promise.all([
         supabase.from('challenge_categories').select('*').order('sort_order'),
-        supabase.from('challenges').select('*, challenge_categories(name, icon, gradient_start, gradient_end)').in('visibility', ['visible']),
+        supabase.from('challenges').select('*, challenge_categories(name, icon, gradient_start, gradient_end)').in('visibility', ['visible', 'coming_soon', 'mystery']),
         profile ? supabase.from('user_challenges').select('*').eq('user_id', profile.id) : { data: [] },
       ]);
       if (catRes.data) setCategories(catRes.data);
@@ -100,28 +122,41 @@ export default function IzazoviScreen() {
     setSubmitting(true);
     try {
       const today = new Date().toISOString().split('T')[0];
+      const existing = getProgress(challenge.id);
+      const newProgress = Math.min((existing?.progress || 0) + 1, challenge.target_count);
+      const isDone = newProgress >= challenge.target_count;
+
       const { error } = await supabase.from('user_challenges').upsert({
         user_id: profile.id,
         challenge_id: challenge.id,
-        progress: challenge.target_count,
-        is_completed: true,
-        completed_at: new Date().toISOString(),
+        progress: newProgress,
+        is_completed: isDone,
+        completed_at: isDone ? new Date().toISOString() : null,
         date: today,
       }, { onConflict: 'user_id,challenge_id,date' });
 
       if (!error) {
-        // Award XP
-        await supabase.rpc('award_xp', {
-          p_user_id: profile.id,
-          p_xp_amount: challenge.xp_reward,
-        });
-        posthog.capture('challenge_completed', {
-          challenge_id: challenge.id,
-          challenge_title: challenge.title,
-          xp_reward: challenge.xp_reward,
-          verification_type: 'self_report',
-        });
+        if (isDone) {
+          // Award XP
+          await supabase.rpc('award_xp', {
+            p_user_id: profile.id,
+            p_xp_amount: challenge.xp_reward,
+          });
+          posthog.capture('challenge_completed', {
+            challenge_id: challenge.id,
+            challenge_title: challenge.title,
+            xp_reward: challenge.xp_reward,
+            verification_type: 'self_report',
+          });
+        } else {
+          posthog.capture('challenge_progress', {
+            challenge_id: challenge.id,
+            progress: newProgress,
+            target: challenge.target_count,
+          });
+        }
         await refreshProfile();
+        
         // Refresh user challenges
         const { data } = await supabase.from('user_challenges').select('*').eq('user_id', profile.id);
         if (data) setUserChallenges(data);
@@ -228,8 +263,10 @@ export default function IzazoviScreen() {
     }
   };
 
-  const getCategoryIcon = (catName) => {
-    const Icon = CATEGORY_ICONS[catName] || FavoriteIcon;
+  const getCategoryIcon = (challengeCat) => {
+    if (!challengeCat) return <FavoriteIcon />;
+    const iconName = challengeCat.icon;
+    const Icon = CATEGORY_ICONS[iconName] || CATEGORY_ICONS[challengeCat.name] || FavoriteIcon;
     return <Icon />;
   };
 
@@ -238,7 +275,7 @@ export default function IzazoviScreen() {
       {/* Header */}
       <div className="challenges-header">
         <div className="challenges-count">
-          <span>{completed}</span> / {challenges.length} izazova
+          <span>{completed}</span> / {challenges.filter(c => c.visibility === 'visible').length} odrađenih navika
         </div>
       </div>
 
@@ -256,7 +293,7 @@ export default function IzazoviScreen() {
             className={`category-pill ${activeCategory === cat.id ? 'active' : ''}`}
             onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
           >
-            {getCategoryIcon(cat.name)}
+            {getCategoryIcon(cat)}
             {cat.name}
           </button>
         ))}
@@ -287,6 +324,66 @@ export default function IzazoviScreen() {
           const verifyType = challenge.verification_type || 'self_report';
           const verifyInfo = VERIFY_LABELS[verifyType] || VERIFY_LABELS.self_report;
 
+          // 1. Check Mystery visibility
+          if (challenge.visibility === 'mystery') {
+            return (
+              <div
+                key={challenge.id}
+                className="challenge-card mystery"
+                style={{ cursor: 'not-allowed', opacity: 0.7 }}
+              >
+                <div
+                  className="challenge-icon"
+                  style={{ background: 'rgba(0,0,0,0.05)', color: '#94a3b8' }}
+                >
+                  <HelpOutlineIcon />
+                </div>
+                <div className="challenge-content">
+                  <div className="challenge-title" style={{ fontFamily: 'var(--font-heading)', color: '#94a3b8' }}>
+                    ???
+                    <span className="challenge-verify-badge self-report" style={{ background: '#e2e8f0', color: '#94a3b8' }}>
+                      Tajanstveno
+                    </span>
+                  </div>
+                  <div className="challenge-desc">Navika pod upitnikom. Riješi ostale navike da se otkrije! 🕵️</div>
+                </div>
+              </div>
+            );
+          }
+
+          // 2. Check Coming Soon visibility
+          if (challenge.visibility === 'coming_soon') {
+            return (
+              <div
+                key={challenge.id}
+                className="challenge-card coming-soon"
+                style={{
+                  cursor: 'not-allowed',
+                  opacity: 0.8,
+                  borderColor: 'var(--prisa-blue-pastel)',
+                  background: 'var(--prisa-blue-light)'
+                }}
+              >
+                <div
+                  className="challenge-icon"
+                  style={{ background: 'var(--prisa-blue-pastel)', color: 'var(--prisa-blue)' }}
+                >
+                  {getCategoryIcon(challenge.challenge_categories)}
+                </div>
+                <div className="challenge-content">
+                  <div className="challenge-title" style={{ color: 'var(--prisa-blue)' }}>
+                    {challenge.title}
+                    <span className="challenge-verify-badge" style={{ background: 'var(--prisa-blue)', color: '#fff' }}>
+                      Uskoro
+                    </span>
+                  </div>
+                  <div className="challenge-desc">{challenge.description}</div>
+                </div>
+              </div>
+            );
+          }
+
+          // 3. Regular Visible card
           return (
             <div
               key={challenge.id}
@@ -297,7 +394,7 @@ export default function IzazoviScreen() {
                 className="challenge-icon"
                 style={{ background: `linear-gradient(135deg, ${gradStart}22, ${gradEnd}22)`, color: gradStart }}
               >
-                {getCategoryIcon(catName)}
+                {getCategoryIcon(challenge.challenge_categories)}
               </div>
               <div className="challenge-content">
                 <div className="challenge-title">
@@ -329,7 +426,7 @@ export default function IzazoviScreen() {
 
         {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-            Nema izazova u ovoj kategoriji.
+            Nema navika u ovoj kategoriji.
           </div>
         )}
       </div>
@@ -340,7 +437,7 @@ export default function IzazoviScreen() {
           <div className="dialog-card" onClick={e => e.stopPropagation()}>
             <div className="challenge-detail-header">
               <div className="card-icon-circle orange">
-                {getCategoryIcon(selectedChallenge.challenge_categories?.name)}
+                {getCategoryIcon(selectedChallenge.challenge_categories)}
               </div>
               <div>
                 <h2 style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, color: 'var(--text-dark)', fontSize: '1.2rem' }}>
@@ -355,18 +452,18 @@ export default function IzazoviScreen() {
             <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <span className="challenge-xp-badge">⚡ {selectedChallenge.xp_reward} XP</span>
               <span className="challenge-xp-badge" style={{ background: 'var(--prisa-blue-light)', color: 'var(--prisa-blue)' }}>
-                🎯 {selectedChallenge.target_count} {selectedChallenge.unit || ''}
+                🎯 Trenutno: {getProgress(selectedChallenge.id)?.progress || 0} / {selectedChallenge.target_count} {selectedChallenge.unit || ''}
               </span>
             </div>
 
-            {/* Self Report */}
+            {/* Self Report (Tap to Increment) */}
             {(selectedChallenge.verification_type === 'self_report' || !selectedChallenge.verification_type) && (
               <button
                 className="btn btn-primary btn-block btn-large"
                 onClick={() => handleSelfReport(selectedChallenge)}
                 disabled={submitting}
               >
-                {submitting ? <span className="loading-spinner" /> : '✅ Potvrdi izazov'}
+                {submitting ? <span className="loading-spinner" /> : `➕ Zabilježi napredak (+1)`}
               </button>
             )}
 
@@ -374,13 +471,15 @@ export default function IzazoviScreen() {
             {selectedChallenge.verification_type === 'field_input' && (
               <div className="challenge-field-input">
                 <div className="form-group">
-                  <label>Koliko si danas napravio/la? ({selectedChallenge.unit})</label>
+                  <label>
+                    {selectedChallenge.input_question || `Koliko si danas napravio/la? (${selectedChallenge.unit})`}
+                  </label>
                   <input
                     type="number"
                     value={fieldValue}
                     onChange={e => setFieldValue(e.target.value)}
                     placeholder={`npr. ${selectedChallenge.target_count}`}
-                    min="0"
+                    min="1"
                   />
                 </div>
                 <button

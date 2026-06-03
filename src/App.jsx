@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
@@ -22,14 +23,47 @@ import AdminAchievements from './pages/admin/AdminAchievements';
 import AdminTeams from './pages/admin/AdminTeams';
 import AdminQuotes from './pages/admin/AdminQuotes';
 import AdminNotifications from './pages/admin/AdminNotifications';
+import AdminCategories from './pages/admin/AdminCategories';
+import AdminLevels from './pages/admin/AdminLevels';
 
 const SCREEN_TITLES = ['Početna', 'Navike', 'Arena', 'Rang lista', 'Izazovi', 'Profil'];
 
 function AppShell() {
-  const { signOut, loading } = useAuth();
+  const { signOut, loading, user } = useAuth();
   const navigate = useNavigate();
   const [navValue, setNavValue] = useState(0);
   const [toasts, setToasts] = useState([]);
+  const [arenaEnabled, setArenaEnabled] = useState(false);
+
+  // Check session persistence (90 days)
+  useEffect(() => {
+    const sessionStart = localStorage.getItem('prisa_session_start');
+    if (sessionStart) {
+      const start = parseInt(sessionStart, 10);
+      const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+      if (Date.now() - start > ninetyDaysMs) {
+        localStorage.removeItem('prisa_session_start');
+        signOut();
+      }
+    } else if (user) {
+      localStorage.setItem('prisa_session_start', Date.now().toString());
+    }
+  }, [user, signOut]);
+
+  // Fetch Arena configuration
+  useEffect(() => {
+    async function fetchArenaSetting() {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('*')
+        .eq('key', 'arena_enabled')
+        .single();
+      if (!error && data && data.value) {
+        setArenaEnabled(data.value.enabled === true || data.value === true);
+      }
+    }
+    fetchArenaSetting();
+  }, []);
 
   const addToast = useCallback((message, type = 'success', duration = 5000) => {
     const id = Date.now();
@@ -63,7 +97,7 @@ function AppShell() {
   const screens = [
     <HomeScreen key="home" onNavigate={handleNavigate} />,
     <IzazoviScreen key="izazovi" />,
-    <ArenaScreen key="arena" />,
+    arenaEnabled ? <ArenaScreen key="arena" /> : <Navigate to="/" replace />,
     <LeaderboardScreen key="leaderboard" />,
     <PostignucaScreen key="postignuca" />,
     <ProfileScreen key="profile" onLogout={handleLogout} />,
@@ -80,6 +114,7 @@ function AppShell() {
           setNavValue={setNavValue}
           onLogout={handleLogout}
           onAdmin={handleAdmin}
+          arenaEnabled={arenaEnabled}
         />
         <div className="main-content">
           <div className="main-topbar">
@@ -97,7 +132,7 @@ function AppShell() {
         <div className="mobile-content">
           {screens[navValue]}
         </div>
-        <BottomNav navValue={navValue} setNavValue={setNavValue} />
+        <BottomNav navValue={navValue} setNavValue={setNavValue} arenaEnabled={arenaEnabled} />
       </div>
 
       <Toast toasts={toasts} removeToast={removeToast} />
@@ -170,6 +205,8 @@ export default function App() {
         <Route path="users" element={<AdminUsers />} />
         <Route path="challenges" element={<AdminChallenges />} />
         <Route path="achievements" element={<AdminAchievements />} />
+        <Route path="categories" element={<AdminCategories />} />
+        <Route path="levels" element={<AdminLevels />} />
         <Route path="teams" element={<AdminTeams />} />
         <Route path="quotes" element={<AdminQuotes />} />
         <Route path="notifications" element={<AdminNotifications />} />

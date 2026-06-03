@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 
 export default function AdminTeams() {
   const [teams, setTeams] = useState([]);
   const [editingTeam, setEditingTeam] = useState(null);
+  const [isAdding, setIsAdding] = useState(false);
   const [form, setForm] = useState({ name: '', icon: '', color: '', score: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -27,12 +30,24 @@ export default function AdminTeams() {
   }, []);
 
   const handleEditClick = (team) => {
+    setIsAdding(false);
     setEditingTeam(team);
     setForm({
       name: team.name || '',
       icon: team.icon || '',
       color: team.color || '',
       score: team.score || 0,
+    });
+  };
+
+  const handleAddClick = () => {
+    setEditingTeam(null);
+    setIsAdding(true);
+    setForm({
+      name: '',
+      icon: '🏳️',
+      color: '#3b82f6',
+      score: 0,
     });
   };
 
@@ -46,22 +61,57 @@ export default function AdminTeams() {
     if (!form.name) return;
 
     try {
-      const { error } = await supabase
-        .from('teams')
-        .update({
-          name: form.name,
-          icon: form.icon,
-          color: form.color,
-          score: parseInt(form.score) || 0,
-        })
-        .eq('id', editingTeam.id);
+      if (editingTeam) {
+        const { error } = await supabase
+          .from('teams')
+          .update({
+            name: form.name,
+            icon: form.icon,
+            color: form.color,
+            score: parseInt(form.score) || 0,
+          })
+          .eq('id', editingTeam.id);
 
-      if (error) throw error;
-      setEditingTeam(null);
+        if (error) throw error;
+        setEditingTeam(null);
+      } else {
+        const { error } = await supabase
+          .from('teams')
+          .insert([
+            {
+              name: form.name,
+              icon: form.icon,
+              color: form.color,
+              score: parseInt(form.score) || 0,
+            },
+          ]);
+
+        if (error) throw error;
+        setIsAdding(false);
+      }
       await fetchTeams();
     } catch (err) {
       console.error(err);
       alert('Greška prilikom spremanja tima.');
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`Jesi li siguran da želiš obrisati tim "${name}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await fetchTeams();
+    } catch (err) {
+      console.error(err);
+      alert('Greška pri brisanju. Moguće je da u timu još ima igrača.');
     }
   };
 
@@ -77,14 +127,19 @@ export default function AdminTeams() {
     <div>
       <div className="admin-topbar">
         <h1 className="admin-page-title">Upravljanje Timovima</h1>
-        <button className="btn btn-outline" onClick={fetchTeams}>Osvježi</button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn btn-outline" onClick={fetchTeams}>Osvježi</button>
+          <button className="btn btn-primary" onClick={handleAddClick}>
+            <AddIcon style={{ fontSize: 18, marginRight: 4 }} /> Dodaj Tim
+          </button>
+        </div>
       </div>
 
-      {/* Edit Form */}
-      {editingTeam && (
+      {/* Form (Add or Edit) */}
+      {(editingTeam || isAdding) && (
         <div className="admin-form-card" style={{ marginBottom: 32 }}>
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, marginBottom: 20 }}>
-            📝 Uredi Tim: {editingTeam.name}
+            {editingTeam ? `📝 Uredi Tim: ${editingTeam.name}` : '✨ Novi Tim'}
           </h2>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="admin-form-row">
@@ -96,6 +151,7 @@ export default function AdminTeams() {
                   value={form.name}
                   onChange={handleInputChange}
                   required
+                  placeholder="npr. Plavi gromovi"
                 />
               </div>
 
@@ -106,13 +162,14 @@ export default function AdminTeams() {
                   name="icon"
                   value={form.icon}
                   onChange={handleInputChange}
+                  placeholder="npr. 🦊"
                 />
               </div>
             </div>
 
             <div className="admin-form-row">
               <div className="form-group">
-                <label>Boja tima (HEX kod, npr. #3b82f6)</label>
+                <label>Boja tima (HEX kod)</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
                     type="color"
@@ -139,18 +196,22 @@ export default function AdminTeams() {
                   name="score"
                   value={form.score}
                   onChange={handleInputChange}
+                  min={0}
                 />
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
               <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px' }}>
-                Spremi Promjene
+                {editingTeam ? 'Spremi Promjene' : 'Dodaj Tim'}
               </button>
               <button
                 type="button"
                 className="btn btn-outline"
-                onClick={() => setEditingTeam(null)}
+                onClick={() => {
+                  setEditingTeam(null);
+                  setIsAdding(false);
+                }}
               >
                 Odustani
               </button>
@@ -164,18 +225,18 @@ export default function AdminTeams() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Ikona</th>
+              <th style={{ width: 80 }}>Ikona</th>
               <th>Naziv Tima</th>
               <th>Boja</th>
               <th>Bodovi (Score)</th>
               <th>Broj Članova</th>
-              <th>Akcije</th>
+              <th style={{ width: 180 }}>Akcije</th>
             </tr>
           </thead>
           <tbody>
             {teams.map((t) => (
               <tr key={t.id}>
-                <td style={{ fontSize: '2rem', textAlign: 'center', width: 60 }}>{t.icon || '🏳️'}</td>
+                <td style={{ fontSize: '2rem', textAlign: 'center' }}>{t.icon || '🏳️'}</td>
                 <td style={{ fontWeight: 800, color: 'var(--text-dark)', fontSize: '1rem' }}>{t.name}</td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -196,14 +257,24 @@ export default function AdminTeams() {
                 </td>
                 <td>{t.member_count || 0} igrača</td>
                 <td>
-                  <button
-                    className="btn btn-outline"
-                    style={{ padding: '6px 10px', fontSize: '0.78rem' }}
-                    onClick={() => handleEditClick(t)}
-                  >
-                    <EditIcon style={{ fontSize: 14 }} />
-                    Uredi
-                  </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      className="btn btn-outline"
+                      style={{ padding: '6px 10px', fontSize: '0.78rem' }}
+                      onClick={() => handleEditClick(t)}
+                    >
+                      <EditIcon style={{ fontSize: 14 }} />
+                      Uredi
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      style={{ padding: '6px 10px', fontSize: '0.78rem', color: '#ef4444', borderColor: '#fee2e2' }}
+                      onClick={() => handleDelete(t.id, t.name)}
+                    >
+                      <DeleteIcon style={{ fontSize: 14 }} />
+                      Obriši
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

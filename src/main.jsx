@@ -19,6 +19,14 @@ if (import.meta.env.VITE_POSTHOG_KEY) {
   });
 }
 
+// Capture PWA install prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.deferredPrompt = e;
+  window.dispatchEvent(new CustomEvent('pwa-install-available'));
+});
+
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>

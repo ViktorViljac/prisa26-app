@@ -81,42 +81,14 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="login-tabs">
-          <button
-            className={`login-tab ${mode === 'login' ? 'active' : ''}`}
-            onClick={() => { setMode('login'); setError(''); }}
-            type="button"
-          >
-            Prijava
-          </button>
-          <button
-            className={`login-tab ${mode === 'register' ? 'active' : ''}`}
-            onClick={() => { setMode('register'); setError(''); }}
-            type="button"
-          >
-            Registracija
-          </button>
+        <div style={{ textAlign: 'center', marginBottom: 20, fontSize: '0.82rem', color: 'var(--text-gray)' }}>
+          Pristup je omogućen samo pozvanim članovima. 🔒
         </div>
 
         {/* Error */}
         {error && <div className="login-error">{error}</div>}
 
-        {/* Form */}
         <form onSubmit={handleSubmit}>
-          {mode === 'register' && (
-            <div className="form-group">
-              <label htmlFor="login-name">Ime i prezime</label>
-              <input
-                id="login-name"
-                type="text"
-                placeholder="Marko Markić"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-              />
-            </div>
-          )}
 
           <div className="form-group">
             <label htmlFor="login-email">Email</label>

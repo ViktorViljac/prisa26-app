@@ -16,6 +16,7 @@ const INITIAL_FORM = {
   start_date: '',
   end_date: '',
   is_daily: false,
+  input_question: '',
 };
 
 export default function AdminChallenges() {
@@ -77,6 +78,7 @@ export default function AdminChallenges() {
         target_count: parseInt(form.target_count) || 1,
         start_date: form.start_date || null,
         end_date: form.end_date || null,
+        input_question: form.verification_type === 'field_input' ? form.input_question : null,
       };
 
       if (editingId) {
@@ -114,6 +116,7 @@ export default function AdminChallenges() {
       start_date: challenge.start_date || '',
       end_date: challenge.end_date || '',
       is_daily: challenge.is_daily || false,
+      input_question: challenge.input_question || '',
     });
     setEditingId(challenge.id);
     setShowForm(true);
@@ -282,6 +285,19 @@ export default function AdminChallenges() {
               </div>
             </div>
 
+            {form.verification_type === 'field_input' && (
+              <div className="form-group">
+                <label>Pitanje za brojčani unos (opcionalno)</label>
+                <input
+                  type="text"
+                  name="input_question"
+                  value={form.input_question}
+                  onChange={handleInputChange}
+                  placeholder="npr. Koliko stranica si pročitao? (Zadano: Upišite količinu)"
+                />
+              </div>
+            )}
+
             <div className="admin-form-row">
               <div className="form-group">
                 <label>Vidljivost</label>
@@ -301,6 +317,7 @@ export default function AdminChallenges() {
                   <option value="visible">Vidljivo</option>
                   <option value="coming_soon">Uskoro Stiže</option>
                   <option value="hidden">Skriveno</option>
+                  <option value="mystery">Tajanstveno (Mystery)</option>
                 </select>
               </div>
 
@@ -416,12 +433,15 @@ export default function AdminChallenges() {
                           ? 'var(--prisa-teal)'
                           : c.visibility === 'coming_soon'
                           ? 'var(--prisa-blue)'
+                          : c.visibility === 'mystery'
+                          ? '#8b5cf6'
                           : 'var(--text-muted)',
                     }}
                   >
                     {c.visibility === 'visible' && 'VIDLJIVO'}
                     {c.visibility === 'coming_soon' && 'USKORO'}
                     {c.visibility === 'hidden' && 'SKRIVENO'}
+                    {c.visibility === 'mystery' && 'TAJANSTVENO'}
                   </span>
                 </td>
                 <td style={{ fontWeight: 700 }}>{c.is_daily ? 'DA' : 'NE'}</td>

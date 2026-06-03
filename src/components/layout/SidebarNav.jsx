@@ -9,15 +9,15 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const NAV_ITEMS = [
-  { label: 'Početna', icon: HomeIcon },
-  { label: 'Navike', icon: EmojiEventsIcon },
-  { label: 'Arena', icon: SportsKabaddiIcon },
-  { label: 'Rang', icon: LeaderboardIcon },
-  { label: 'Izazovi', icon: MilitaryTechIcon },
-  { label: 'Profil', icon: PersonIcon },
+  { label: 'Početna', icon: HomeIcon, index: 0 },
+  { label: 'Navike', icon: EmojiEventsIcon, index: 1 },
+  { label: 'Arena', icon: SportsKabaddiIcon, index: 2, isArena: true },
+  { label: 'Rang', icon: LeaderboardIcon, index: 3 },
+  { label: 'Izazovi', icon: MilitaryTechIcon, index: 4 },
+  { label: 'Profil', icon: PersonIcon, index: 5 },
 ];
 
-export default function SidebarNav({ navValue, setNavValue, onLogout, onAdmin }) {
+export default function SidebarNav({ navValue, setNavValue, onLogout, onAdmin, arenaEnabled }) {
   const { profile, isAdmin } = useAuth();
 
   const xpIntoLevel = profile ? (profile.xp % 500) : 0;
@@ -55,11 +55,11 @@ export default function SidebarNav({ navValue, setNavValue, onLogout, onAdmin })
 
       {/* Navigation */}
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map((item, idx) => (
+        {NAV_ITEMS.filter(item => !item.isArena || arenaEnabled).map((item) => (
           <button
-            key={idx}
-            className={`sidebar-nav-item ${navValue === idx ? 'active' : ''}`}
-            onClick={() => setNavValue(idx)}
+            key={item.index}
+            className={`sidebar-nav-item ${navValue === item.index ? 'active' : ''}`}
+            onClick={() => setNavValue(item.index)}
           >
             <item.icon />
             {item.label}

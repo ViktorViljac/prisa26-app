@@ -2197,8 +2197,10 @@ body {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-form-row { grid-template-columns: 1fr; }
-  .arena-vs-section { flex-direction: column; }
-  .fighter-card { width: 100%; max-width: 200px; }
+  .arena-vs-section { flex-direction: column; gap: 8px; align-items: center; }
+  .fighter-card { width: 100%; max-width: 260px; }
+  .fighter-card.left.mounted, .fighter-card.right.mounted { transform: none; }
+  .vs-seal { margin: 8px 0; }
   .podium-bar { width: 60px; }
   .teams-grid { grid-template-columns: 1fr 1fr; }
 }

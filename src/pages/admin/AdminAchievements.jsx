@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 const INITIAL_FORM = {
   title: '',
@@ -20,6 +22,11 @@ export default function AdminAchievements() {
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Single-use codes state
+  const [selectedAchievementForCodes, setSelectedAchievementForCodes] = useState(null);
+  const [codes, setCodes] = useState([]);
+  const [loadingCodes, setLoadingCodes] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -43,6 +50,74 @@ export default function AdminAchievements() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const fetchCodes = async (achievementId) => {
+    setLoadingCodes(true);
+    try {
+      const { data, error } = await supabase
+        .from('achievement_codes')
+        .select('*, profiles(name, email)')
+        .eq('achievement_id', achievementId)
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        setCodes(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingCodes(false);
+    }
+  };
+
+  const handleOpenCodesModal = (ach) => {
+    setSelectedAchievementForCodes(ach);
+    fetchCodes(ach.id);
+  };
+
+  const handleGenerateCode = async () => {
+    if (!selectedAchievementForCodes) return;
+    // Generate code format: PRISA-XXXX-XXXX
+    const codePart1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const codePart2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const newCode = `PRISA-${codePart1}-${codePart2}`;
+
+    try {
+      const { error } = await supabase
+        .from('achievement_codes')
+        .insert([
+          {
+            achievement_id: selectedAchievementForCodes.id,
+            code: newCode,
+            is_used: false,
+          },
+        ]);
+      if (error) throw error;
+      await fetchCodes(selectedAchievementForCodes.id);
+    } catch (err) {
+      console.error(err);
+      alert('Greška pri generiranju koda.');
+    }
+  };
+
+  const handleDeleteCode = async (codeId) => {
+    if (!confirm('Jesi li siguran da želiš obrisati ovaj kod?')) return;
+    try {
+      const { error } = await supabase
+        .from('achievement_codes')
+        .delete()
+        .eq('id', codeId);
+      if (error) throw error;
+      await fetchCodes(selectedAchievementForCodes.id);
+    } catch (err) {
+      console.error(err);
+      alert('Greška pri brisanju koda.');
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert(`Kod "${text}" je kopiran!`);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -238,13 +313,13 @@ export default function AdminAchievements() {
               </div>
 
               <div className="form-group">
-                <label>Kod za Otključavanje (samo ako je tip uvjeta Kod)</label>
+                <label>Zajednički kod (samo ako je tip uvjeta Kod i želiš isti kod za sve)</label>
                 <input
                   type="text"
                   name="unlock_code"
                   value={form.unlock_code}
                   onChange={handleInputChange}
-                  placeholder="npr. PRISA2026"
+                  placeholder="npr. PRISA2026 (Ostavi prazno za jednokratne kodove)"
                   style={{ textTransform: 'uppercase' }}
                   disabled={form.condition_type !== 'code'}
                 />
@@ -280,9 +355,9 @@ export default function AdminAchievements() {
               <th>Naslov i Opis</th>
               <th>XP Nagrada</th>
               <th>Tip Uvjeta</th>
-              <th>Kod</th>
+              <th>Zajednički Kod</th>
               <th>Sort</th>
-              <th>Akcije</th>
+              <th style={{ width: 220 }}>Akcije</th>
             </tr>
           </thead>
           <tbody>
@@ -302,11 +377,21 @@ export default function AdminAchievements() {
                   </span>
                 </td>
                 <td style={{ fontFamily: 'monospace', fontWeight: 700, letterSpacing: 0.5 }}>
-                  {a.unlock_code ? a.unlock_code : '—'}
+                  {a.unlock_code ? a.unlock_code : a.condition_type === 'code' ? 'Jednokratni kodovi 🎫' : '—'}
                 </td>
                 <td>{a.sort_order}</td>
                 <td>
-                  <div className="admin-actions-cell">
+                  <div className="admin-actions-cell" style={{ display: 'flex', gap: 8 }}>
+                    {a.condition_type === 'code' && !a.unlock_code && (
+                      <button
+                        className="btn btn-outline"
+                        style={{ padding: '6px 10px', fontSize: '0.78rem', color: 'var(--prisa-teal)', borderColor: 'rgba(13, 148, 136, 0.2)' }}
+                        onClick={() => handleOpenCodesModal(a)}
+                      >
+                        <VpnKeyIcon style={{ fontSize: 14, marginRight: 2 }} />
+                        Kodovi
+                      </button>
+                    )}
                     <button
                       className="btn btn-outline"
                       style={{ padding: '6px 10px', fontSize: '0.78rem' }}
@@ -335,6 +420,116 @@ export default function AdminAchievements() {
           </tbody>
         </table>
       </div>
+
+      {/* Single-use Codes Manager Modal */}
+      {selectedAchievementForCodes && (
+        <div className="dialog-overlay" onClick={() => setSelectedAchievementForCodes(null)}>
+          <div className="dialog-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 650 }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, marginBottom: 10 }}>
+              🎫 Jednokratni Kodovi: {selectedAchievementForCodes.title}
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-gray)', marginBottom: 20 }}>
+              Generiraj jednokratne kodove koje korisnici mogu iskoristiti za otključavanje ovog postignuća. Svaki kod se može iskoristiti samo jednom.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-dark)' }}>
+                Ukupno generirano: {codes.length}
+              </span>
+              <button className="btn btn-primary" onClick={handleGenerateCode}>
+                <AddIcon style={{ fontSize: 16, marginRight: 4 }} /> Generiraj Novi Kod
+              </button>
+            </div>
+
+            {loadingCodes && codes.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+                <div className="loading-spinner" />
+              </div>
+            ) : (
+              <div style={{ maxHeight: 300, overflowY: 'auto', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 'var(--radius-md)' }}>
+                <table className="admin-table" style={{ margin: 0 }}>
+                  <thead>
+                    <tr>
+                      <th>Kod</th>
+                      <th>Status</th>
+                      <th>Iskoristio</th>
+                      <th>Datum</th>
+                      <th style={{ width: 80 }}>Akcije</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {codes.map((c) => (
+                      <tr key={c.id}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.85rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>{c.code}</span>
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(c.code)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'inline-flex', color: 'var(--text-muted)' }}
+                              title="Kopiraj kod"
+                            >
+                              <ContentCopyIcon style={{ fontSize: 12 }} />
+                            </button>
+                          </div>
+                        </td>
+                        <td>
+                          {c.is_used ? (
+                            <span style={{ color: '#ef4444', fontWeight: 700, fontSize: '0.75rem' }}>ISKORIŠTEN 🔴</span>
+                          ) : (
+                            <span style={{ color: 'var(--prisa-teal)', fontWeight: 700, fontSize: '0.75rem' }}>SLOBODAN 🟢</span>
+                          )}
+                        </td>
+                        <td style={{ fontSize: '0.8rem' }}>
+                          {c.is_used && c.profiles ? (
+                            <div>
+                              <div style={{ fontWeight: 700 }}>{c.profiles.name}</div>
+                              <div style={{ fontSize: '0.7rem', color: 'var(--text-gray)' }}>{c.profiles.email}</div>
+                            </div>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td style={{ fontSize: '0.72rem', color: 'var(--text-gray)' }}>
+                          {c.is_used && c.used_at ? (
+                            new Date(c.used_at).toLocaleString('hr-HR')
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-outline"
+                            style={{ padding: '4px 6px', fontSize: '0.75rem', color: '#ef4444', borderColor: '#fee2e2' }}
+                            onClick={() => handleDeleteCode(c.id)}
+                            disabled={c.is_used}
+                            title={c.is_used ? 'Iskorišteni kod se ne može obrisati' : 'Obriši kod'}
+                          >
+                            <DeleteIcon style={{ fontSize: 12 }} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {codes.length === 0 && (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)' }}>
+                          Nema generiranih kodova. Klikni gore za stvoriti prvi kod!
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+              <button className="btn btn-outline" onClick={() => setSelectedAchievementForCodes(null)}>
+                Zatvori
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

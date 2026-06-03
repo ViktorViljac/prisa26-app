@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import posthog from 'posthog-js';
@@ -15,8 +15,29 @@ export default function ProfileScreen({ onLogout }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
 
+  const [installPrompt, setInstallPrompt] = useState(window.deferredPrompt);
+
   const level = Math.floor((profile?.xp || 0) / 500) + 1;
   const avatarLetter = profile?.name?.charAt(0)?.toUpperCase() || '?';
+
+  useEffect(() => {
+    const handlePrompt = () => {
+      setInstallPrompt(window.deferredPrompt);
+    };
+    window.addEventListener('pwa-install-available', handlePrompt);
+    return () => window.removeEventListener('pwa-install-available', handlePrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    }
+    window.deferredPrompt = null;
+    setInstallPrompt(null);
+  };
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
@@ -114,6 +135,17 @@ export default function ProfileScreen({ onLogout }) {
         ))}
       </div>
 
+      {/* PWA Install Button */}
+      {installPrompt && (
+        <button
+          className="btn btn-primary btn-block btn-large"
+          onClick={handleInstallClick}
+          style={{ marginTop: 16, marginBottom: 8, background: 'linear-gradient(90deg, var(--prisa-teal), #2dd4bf)', border: 'none' }}
+        >
+          📱 Instaliraj Aplikaciju
+        </button>
+      )}
+
       {/* Feedback section */}
       <div className="profile-feedback-section">
         <div className="profile-section-title">📬 Povratne informacije</div>
@@ -141,3 +173,4 @@ export default function ProfileScreen({ onLogout }) {
     </div>
   );
 }
+
