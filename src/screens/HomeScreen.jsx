@@ -50,9 +50,9 @@ function getGreetingData() {
   if (h < 12) pool = morningGreetings;
   else if (h >= 18) pool = eveningGreetings;
   
-  // Pick deterministically based on hour
-  const hourSeed = (new Date().getHours() + new Date().getDate()) % pool.length;
-  return pool[hourSeed];
+  // Pick randomly on render
+  const randomIndex = Math.floor(Math.random() * pool.length);
+  return pool[randomIndex];
 }
 
 export default function HomeScreen({ onNavigate }) {
@@ -205,37 +205,44 @@ export default function HomeScreen({ onNavigate }) {
             animatedXp={animatedXp}
           />
           <div className="xp-info">
-            {/* Level badge next to XP ring */}
+            {/* Large Level badge - full width mobile optimized */}
             <div 
               onClick={() => setShowLevelProgression(true)}
               style={{
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(5px)',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                border: '1.5px solid rgba(255, 255, 255, 0.4)',
+                justifyContent: 'center',
+                gap: '10px',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1))',
+                backdropFilter: 'blur(8px)',
+                padding: '10px 16px',
+                borderRadius: 'var(--radius-lg)',
+                border: '1.5px solid rgba(255, 255, 255, 0.5)',
                 cursor: 'pointer',
-                marginBottom: '8px',
-                transition: 'all 0.2s ease',
+                marginBottom: '12px',
+                width: '100%',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transition: 'transform 0.2s ease, background 0.2s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15))';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1))';
               }}
               title="Vidi razine i napredak"
             >
-              <span style={{ fontSize: '1.2rem' }}>{levelInfo.icon}</span>
-              <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>
-                {levelInfo.name}
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', marginLeft: '2px' }}>ℹ️</span>
+              <div style={{ fontSize: '1.6rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}>{levelInfo.icon}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', color: '#fff', letterSpacing: '0.5px' }}>
+                  {levelInfo.name}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
+                  Pogledaj put razina
+                </span>
+              </div>
             </div>
 
             <h3 style={{ marginTop: '2px' }}>{animatedXp} XP</h3>
@@ -414,8 +421,11 @@ export default function HomeScreen({ onNavigate }) {
                 top: '20px',
                 bottom: '20px',
                 width: '4px',
-                background: 'linear-gradient(to bottom, #3b82f6, #10b981, #f59e0b, #ef4444)',
-                borderRadius: '2px',
+                background: 'transparent',
+                backgroundImage: 'linear-gradient(to bottom, #3b82f6 50%, rgba(255,255,255,0) 0%)',
+                backgroundPosition: 'left',
+                backgroundSize: '4px 14px',
+                backgroundRepeat: 'repeat-y',
                 zIndex: 1
               }} />
 
@@ -503,9 +513,8 @@ export default function HomeScreen({ onNavigate }) {
             {/* Footer */}
             <div style={{ marginTop: '16px', textAlign: 'center' }}>
               <button 
-                className="btn-primary"
+                className="btn btn-primary btn-block btn-large"
                 onClick={() => setShowLevelProgression(false)}
-                style={{ width: '100%' }}
               >
                 Zatvori
               </button>

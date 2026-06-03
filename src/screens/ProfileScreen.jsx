@@ -405,16 +405,7 @@ export default function ProfileScreen({ onLogout }) {
         )}
       </div>
 
-      {/* PWA Install Button */}
-      {installPrompt && (
-        <button
-          className="btn btn-primary btn-block btn-large"
-          onClick={handleInstallClick}
-          style={{ marginTop: 24, marginBottom: 8, background: 'linear-gradient(90deg, var(--prisa-teal), #2dd4bf)', border: 'none' }}
-        >
-          📱 Instaliraj Aplikaciju
-        </button>
-      )}
+
 
       {/* Notifications and Privacy utilities */}
       <div className="profile-stats-card" style={{ marginTop: 24, padding: 20 }}>
@@ -518,6 +509,17 @@ export default function ProfileScreen({ onLogout }) {
           </div>
         )}
       </div>
+
+      {/* PWA Install Button */}
+      {installPrompt && (
+        <button
+          className="btn btn-primary btn-block btn-large"
+          onClick={handleInstallClick}
+          style={{ marginTop: 24, marginBottom: 8, background: 'linear-gradient(90deg, var(--prisa-teal), #2dd4bf)', border: 'none' }}
+        >
+          📱 Instaliraj Aplikaciju
+        </button>
+      )}
 
       {/* Logout */}
       <button

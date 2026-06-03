@@ -77,14 +77,14 @@ export default function LeaderboardScreen() {
   const rest = leaderboard.slice(3);
 
   return (
-    <div>
+    <div className="fade-in-content">
       {/* Podium */}
       {top3.length > 0 && (
         <div className="podium-section">
           {podiumOrder.map((user, i) => {
             const avatarLetter = user.name?.charAt(0)?.toUpperCase() || '?';
             return (
-              <div key={user.id} className={`podium-slot ${podiumClasses[i]}`}>
+              <div key={user.id} className={`podium-slot hover-scale ${podiumClasses[i]}`}>
                 <div className="podium-medal">{podiumMedals[i]}</div>
                 <div className="podium-avatar">
                   {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
@@ -100,13 +100,16 @@ export default function LeaderboardScreen() {
 
       {/* Rank list */}
       <div className="rank-list">
+        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, margin: '24px 0 16px 0', color: 'var(--text-dark)' }}>
+          👥 Ukupni poredak
+        </h3>
         {rest.map((user, i) => {
           const rank = i + 4;
           const isMe = user.id === profile?.id;
           const avatarLetter = user.name?.charAt(0)?.toUpperCase() || '?';
           return (
-            <div key={user.id} className={`rank-card ${isMe ? 'me' : ''}`}>
-              <div className="rank-number">{rank}</div>
+            <div key={user.id} className={`rank-card hover-scale ${isMe ? 'me' : ''}`}>
+              <div className="rank-number">{rank}.</div>
               <div className="rank-avatar">
                 {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
               </div>
@@ -123,10 +126,10 @@ export default function LeaderboardScreen() {
       {/* Teams */}
       {teams.length > 0 && (
         <>
-          <div className="teams-section-title">🏆 Timovi</div>
+          <div className="teams-section-title" style={{ marginTop: '32px' }}>🏆 Timovi</div>
           <div className="teams-grid">
             {teams.map(team => (
-              <div key={team.id} className="team-card">
+              <div key={team.id} className="team-card hover-scale">
                 <div className="team-card-icon">{team.icon || '🏳️'}</div>
                 <div className="team-card-name">{team.name}</div>
                 <div className="team-card-members">{team.member_count || 0} članova</div>

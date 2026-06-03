@@ -5,6 +5,7 @@ import posthog from 'posthog-js';
 import LockIcon from '@mui/icons-material/Lock';
 import StarsIcon from '@mui/icons-material/Stars';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -23,6 +24,7 @@ export default function PostignucaScreen() {
   const [codeError, setCodeError] = useState('');
   const [codeSuccess, setCodeSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [selectedAchievement, setSelectedAchievement] = useState(null);
 
   const fetchData = async () => {
     const [achRes, uaRes] = await Promise.all([
@@ -160,43 +162,42 @@ export default function PostignucaScreen() {
     }
   };
 
-  // Filter out hidden achievements unless the user has unlocked them
   const visibleAchievements = achievements.filter(ach => isUnlocked(ach.id) || ach.visibility !== 'hidden');
-  
   const unlockedList = visibleAchievements.filter(ach => isUnlocked(ach.id));
   const lockedList = visibleAchievements.filter(ach => !isUnlocked(ach.id));
 
   return (
-    <div>
+    <div className="fade-in-content">
       {/* Header */}
-      <div className="achievements-header">
+      <div className="achievements-header" style={{ marginBottom: 16 }}>
         <div className="achievements-count">
           <span>{unlockedCount}</span> / {visibleAchievements.length} izazova
         </div>
       </div>
 
-      {/* Unlock code */}
-      <div className="unlock-code-section">
-        <div className="unlock-code-title">🔑 Unesi kod</div>
-        <div className="unlock-code-row">
+      {/* Unlock code - compact UI */}
+      <div className="unlock-code-section" style={{ padding: '16px', marginBottom: '24px' }}>
+        <div className="unlock-code-title" style={{ fontSize: '0.95rem', marginBottom: '8px' }}>🔑 Unesi kod</div>
+        <div className="unlock-code-row" style={{ gap: '8px' }}>
           <input
             type="text"
             value={unlockCode}
             onChange={e => setUnlockCode(e.target.value)}
             placeholder="UNESI KOD"
             maxLength={30}
-            style={{ textTransform: 'uppercase' }}
+            style={{ textTransform: 'uppercase', padding: '10px 14px', fontSize: '0.95rem', flex: 1 }}
           />
           <button
             className="btn btn-primary"
             onClick={handleRedeemCode}
             disabled={submitting || !unlockCode.trim()}
+            style={{ padding: '10px 20px', fontSize: '0.95rem', whiteSpace: 'nowrap' }}
           >
             {submitting ? <span className="loading-spinner" style={{ width: 16, height: 16 }} /> : 'Aktiviraj'}
           </button>
         </div>
-        {codeError && <div className="input-error" style={{ marginTop: 8, color: '#ef4444', fontWeight: 'bold' }}>{codeError}</div>}
-        {codeSuccess && <div style={{ marginTop: 8, fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)' }}>{codeSuccess}</div>}
+        {codeError && <div className="input-error" style={{ marginTop: 6, color: '#ef4444', fontWeight: 'bold', fontSize: '0.8rem' }}>{codeError}</div>}
+        {codeSuccess && <div style={{ marginTop: 6, fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)' }}>{codeSuccess}</div>}
       </div>
 
       {/* Unlocked Section */}
@@ -218,17 +219,19 @@ export default function PostignucaScreen() {
           Još nisi otključao nijedan izazov. Kreni rješavati navike ili aktiviraj kodove! 🚀
         </div>
       ) : (
-        <div className="achievements-grid" style={{ marginBottom: 32 }}>
+        <div className="achievements-compact-grid" style={{ marginBottom: 32 }}>
           {unlockedList.map(ach => (
-            <div key={ach.id} className="achievement-card unlocked">
-              <div className="achievement-icon">{ach.icon || '🏅'}</div>
-              <div className="achievement-title">{ach.title}</div>
-              <div className="achievement-desc">{ach.description}</div>
-              {ach.xp_reward > 0 && (
-                <div className="challenge-xp-badge" style={{ marginTop: 8 }}>
-                  ⚡ {ach.xp_reward} XP
-                </div>
-              )}
+            <div 
+              key={ach.id} 
+              className="achievement-card unlocked hover-scale"
+              onClick={() => setSelectedAchievement({ ...ach, isUnlocked: true })}
+              style={{ cursor: 'pointer', padding: '16px' }}
+            >
+              <div className="achievement-icon" style={{ fontSize: '2rem', marginBottom: '8px' }}>{ach.icon || '🏅'}</div>
+              <div className="achievement-title" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>{ach.title}</div>
+              <div className="achievement-desc-preview" style={{ fontSize: '0.75rem', opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                {ach.description}
+              </div>
             </div>
           ))}
         </div>
@@ -254,7 +257,7 @@ export default function PostignucaScreen() {
           Čestitamo! Otključao si sve dostupne izazove! 🎉
         </div>
       ) : (
-        <div className="achievements-grid">
+        <div className="achievements-compact-grid">
           {lockedList.map(ach => {
             const isMystery = ach.visibility === 'mystery';
             const isComingSoon = ach.visibility === 'coming_soon';
@@ -262,31 +265,29 @@ export default function PostignucaScreen() {
             return (
               <div 
                 key={ach.id} 
-                className={`achievement-card locked ${isComingSoon ? 'coming-soon' : ''}`}
+                className={`achievement-card locked hover-scale ${isComingSoon ? 'coming-soon' : ''}`}
+                onClick={() => setSelectedAchievement({ ...ach, isUnlocked: false, isMystery, isComingSoon })}
                 style={{ 
                   filter: 'grayscale(1)', 
                   opacity: 0.65,
                   position: 'relative',
                   border: isComingSoon ? '1.5px dashed var(--prisa-orange)' : undefined,
-                  background: isComingSoon ? '#fffbeb' : undefined
+                  background: isComingSoon ? '#fffbeb' : undefined,
+                  cursor: 'pointer',
+                  padding: '16px'
                 }}
               >
-                <div className="achievement-icon">{isMystery ? '❓' : (ach.icon || '🏅')}</div>
-                <div className="achievement-title">{isMystery ? '???' : ach.title}</div>
-                <div className="achievement-desc">
-                  {isMystery 
-                    ? 'Ovaj izazov je tajna dok ga ne otključaš!' 
-                    : ach.description}
-                </div>
-
+                <div className="achievement-icon" style={{ fontSize: '2rem', marginBottom: '8px' }}>{isMystery ? '❓' : (ach.icon || '🏅')}</div>
+                <div className="achievement-title" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>{isMystery ? '???' : ach.title}</div>
+                
                 {isComingSoon && ach.start_date && (
                   <div style={{ 
                     marginTop: 8, 
-                    fontSize: '0.8rem', 
+                    fontSize: '0.75rem', 
                     fontWeight: 700, 
                     color: '#d97706',
                     background: '#fef3c7',
-                    padding: '2px 8px',
+                    padding: '2px 6px',
                     borderRadius: '4px',
                     display: 'inline-block'
                   }}>
@@ -294,20 +295,14 @@ export default function PostignucaScreen() {
                   </div>
                 )}
 
-                {!isComingSoon && ach.xp_reward > 0 && (
-                  <div className="challenge-xp-badge" style={{ marginTop: 8 }}>
-                    ⚡ {isMystery ? '?' : ach.xp_reward} XP
-                  </div>
-                )}
-
                 <div className="achievement-lock-overlay">
                   {isComingSoon ? (
                     <span style={{ 
-                      fontSize: '0.85rem', 
+                      fontSize: '0.75rem', 
                       fontWeight: 800, 
                       color: '#d97706',
                       background: '#fff',
-                      padding: '4px 10px',
+                      padding: '4px 8px',
                       borderRadius: '12px',
                       border: '1px solid #f59e0b',
                       boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
@@ -315,7 +310,7 @@ export default function PostignucaScreen() {
                       Uskoro
                     </span>
                   ) : (
-                    <LockIcon className="achievement-lock-icon" />
+                    <LockIcon className="achievement-lock-icon" style={{ fontSize: '1.5rem' }} />
                   )}
                 </div>
               </div>
@@ -323,6 +318,67 @@ export default function PostignucaScreen() {
           })}
         </div>
       )}
+
+      {/* Detail Modal */}
+      {selectedAchievement && (
+        <div className="dialog-overlay" onClick={() => setSelectedAchievement(null)}>
+          <div className="dialog-card slide-up-modal" onClick={e => e.stopPropagation()} style={{ padding: '24px', maxWidth: '400px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <div className="achievement-icon" style={{ fontSize: '3rem', background: 'rgba(0,0,0,0.03)', padding: '12px', borderRadius: '50%', flexShrink: 0 }}>
+                {selectedAchievement.isMystery ? '❓' : (selectedAchievement.icon || '🏅')}
+              </div>
+              <button 
+                onClick={() => setSelectedAchievement(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.8rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-dark)' }}>
+              {selectedAchievement.isMystery ? 'Tajna' : selectedAchievement.title}
+            </h2>
+            
+            <p style={{ fontSize: '0.95rem', color: 'var(--text-gray)', lineHeight: 1.5, marginBottom: '20px' }}>
+              {selectedAchievement.isMystery 
+                ? 'Ovaj izazov je tajna dok ga ne otključaš!' 
+                : selectedAchievement.description}
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+              {!selectedAchievement.isComingSoon && selectedAchievement.xp_reward > 0 && (
+                <div className="challenge-xp-badge" style={{ fontSize: '0.9rem', padding: '6px 12px' }}>
+                  ⚡ {selectedAchievement.isMystery ? '?' : selectedAchievement.xp_reward} XP
+                </div>
+              )}
+              {selectedAchievement.isUnlocked && (
+                <div className="challenge-xp-badge" style={{ background: '#ccfbf1', color: '#0d9488', fontSize: '0.9rem', padding: '6px 12px' }}>
+                  ✓ Otključano
+                </div>
+              )}
+            </div>
+
+            {selectedAchievement.link_url && (
+              <a 
+                href={selectedAchievement.link_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn btn-outline btn-block"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}
+              >
+                Otvori poveznicu <OpenInNewIcon style={{ fontSize: '18px' }} />
+              </a>
+            )}
+
+            {!selectedAchievement.isUnlocked && !selectedAchievement.isMystery && !selectedAchievement.isComingSoon && (
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', background: 'var(--bg-card)', padding: '12px', borderRadius: 'var(--radius-md)' }}>
+                Za otključavanje, unesi kod u polje na vrhu ekrana! 🔑
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

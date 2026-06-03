@@ -2214,4 +2214,41 @@ body {
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr; }
   .achievements-grid { grid-template-columns: 1fr; }
+  .achievements-compact-grid { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   V3 Animations & Styles
+   ========================================================================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-content {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes slideUpModal {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.slide-up-modal {
+  animation: slideUpModal 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.hover-scale {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-scale:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+.hover-scale:active {
+  transform: translateY(1px);
+}
+
+.achievements-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
