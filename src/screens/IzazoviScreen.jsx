@@ -188,7 +188,7 @@ export default function IzazoviScreen() {
     setSubmitting(true);
     try {
       const today = new Date().toISOString().split('T')[0];
-      const filePath = `challenge-proofs/${profile.id}/${challenge.id}_${today}_${Date.now()}.${photoFile.name.split('.').pop()}`;
+      const filePath = `${profile.id}/challenge-proofs/${challenge.id}_${today}_${Date.now()}.${photoFile.name.split('.').pop()}`;
       const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, photoFile);
 
       if (!uploadError) {
