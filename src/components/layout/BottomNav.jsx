@@ -6,10 +6,10 @@ import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
 
 const NAV_ITEMS = [
   { label: 'Početna', icon: HomeIcon },
-  { label: 'Izazovi', icon: EmojiEventsIcon },
+  { label: 'Navike', icon: EmojiEventsIcon },
   { label: 'Arena', icon: SportsKabaddiIcon },
   { label: 'Rang', icon: LeaderboardIcon },
-  { label: 'Postignuća', icon: MilitaryTechIcon },
+  { label: 'Izazovi', icon: MilitaryTechIcon },
 ];
 
 export default function BottomNav({ navValue, setNavValue }) {

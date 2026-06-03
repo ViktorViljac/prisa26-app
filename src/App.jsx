@@ -23,7 +23,7 @@ import AdminTeams from './pages/admin/AdminTeams';
 import AdminQuotes from './pages/admin/AdminQuotes';
 import AdminNotifications from './pages/admin/AdminNotifications';
 
-const SCREEN_TITLES = ['Početna', 'Izazovi', 'Arena', 'Rang lista', 'Postignuća', 'Profil'];
+const SCREEN_TITLES = ['Početna', 'Navike', 'Arena', 'Rang lista', 'Izazovi', 'Profil'];
 
 function AppShell() {
   const { signOut, loading } = useAuth();

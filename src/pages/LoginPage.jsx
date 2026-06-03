@@ -65,11 +65,11 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="login-logo-wrap">
           <img
-            src="/-prisa-icon.png"
+            src="/logo-puni-prisa.png"
             alt="Priša logo"
             style={{
-              width: 80,
-              height: 80,
+              width: 100,
+              height: 100,
               objectFit: 'contain',
               marginBottom: 12,
             }}

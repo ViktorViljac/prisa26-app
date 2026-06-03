@@ -11,8 +11,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 const NAV_ITEMS = [
   { label: 'Nadzorna ploča', path: 'dashboard', icon: DashboardIcon },
   { label: 'Korisnici', path: 'users', icon: PeopleIcon },
-  { label: 'Izazovi', path: 'challenges', icon: EmojiEventsIcon },
-  { label: 'Postignuća', path: 'achievements', icon: MilitaryTechIcon },
+  { label: 'Navike', path: 'challenges', icon: EmojiEventsIcon },
+  { label: 'Izazovi', path: 'achievements', icon: MilitaryTechIcon },
   { label: 'Timovi', path: 'teams', icon: GroupsIcon },
   { label: 'Citati', path: 'quotes', icon: FormatQuoteIcon },
   { label: 'Obavijesti', path: 'notifications', icon: NotificationsIcon },
@@ -25,9 +25,8 @@ export default function AdminLayout() {
     <div className="admin-layout">
       {/* Sidebar */}
       <aside className="admin-sidebar">
-        <div className="admin-sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/-prisa-icon.png" alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
-          <div className="admin-sidebar-brand-text">PRIŠA 2026</div>
+        <div className="admin-sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 24px' }}>
+          <img src="/logo-horizontalni.png" alt="PRIŠA" style={{ maxHeight: 28, maxWidth: '70%', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           <span className="admin-badge">ADMIN</span>
         </div>
 

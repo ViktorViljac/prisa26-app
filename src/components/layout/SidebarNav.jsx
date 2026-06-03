@@ -10,10 +10,10 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const NAV_ITEMS = [
   { label: 'Početna', icon: HomeIcon },
-  { label: 'Izazovi', icon: EmojiEventsIcon },
+  { label: 'Navike', icon: EmojiEventsIcon },
   { label: 'Arena', icon: SportsKabaddiIcon },
   { label: 'Rang', icon: LeaderboardIcon },
-  { label: 'Postignuća', icon: MilitaryTechIcon },
+  { label: 'Izazovi', icon: MilitaryTechIcon },
   { label: 'Profil', icon: PersonIcon },
 ];
 
@@ -28,11 +28,8 @@ export default function SidebarNav({ navValue, setNavValue, onLogout, onAdmin })
   return (
     <aside className="sidebar">
       {/* Brand */}
-      <div className="sidebar-brand">
-        <div className="sidebar-brand-icon" style={{ background: 'none' }}>
-          <img src="/-prisa-icon.png" alt="Priša logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-        </div>
-        <div className="sidebar-brand-text">PRIŠA</div>
+      <div className="sidebar-brand" style={{ justifyContent: 'center', padding: '16px 24px' }}>
+        <img src="/logo-horizontalni.png" alt="PRIŠA" style={{ maxHeight: 38, maxWidth: '100%', objectFit: 'contain' }} />
       </div>
 
       {/* User card */}
