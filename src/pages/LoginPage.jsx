@@ -64,6 +64,16 @@ export default function LoginPage() {
       <div className="login-card">
         {/* Logo */}
         <div className="login-logo-wrap">
+          <img
+            src="/-prisa-icon.png"
+            alt="Priša logo"
+            style={{
+              width: 80,
+              height: 80,
+              objectFit: 'contain',
+              marginBottom: 12,
+            }}
+          />
           <div className="login-logo-title">PRIŠA</div>
           <div className="login-logo-sub">Ljeto koje mijenja navike ✨</div>
           <div className="login-date-badge">

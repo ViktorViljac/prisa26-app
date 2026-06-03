@@ -33,7 +33,10 @@ export default function AppHeader({ onProfile }) {
             </div>
           </div>
         </div>
-        <div className="mobile-brand">PRIŠA</div>
+        <div className="mobile-brand" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <img src="/-prisa-icon.png" alt="" style={{ width: 22, height: 22, objectFit: 'contain' }} />
+          PRIŠA
+        </div>
       </div>
 
       <div className="mobile-resource-row">

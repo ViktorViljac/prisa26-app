@@ -25,8 +25,9 @@ export default function AdminLayout() {
     <div className="admin-layout">
       {/* Sidebar */}
       <aside className="admin-sidebar">
-        <div className="admin-sidebar-brand">
-          <div className="admin-sidebar-brand-text">🔥 PRIŠA 2026</div>
+        <div className="admin-sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src="/-prisa-icon.png" alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+          <div className="admin-sidebar-brand-text">PRIŠA 2026</div>
           <span className="admin-badge">ADMIN</span>
         </div>
 

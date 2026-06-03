@@ -22,8 +22,9 @@ export default function LeaderboardScreen() {
     fetchData();
 
     // Realtime subscription
+    const channelId = `leaderboard-changes-${Date.now()}`;
     const channel = supabase
-      .channel('leaderboard-changes')
+      .channel(channelId)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
         fetchData();
       })

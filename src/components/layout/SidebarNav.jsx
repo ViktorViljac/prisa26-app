@@ -29,7 +29,9 @@ export default function SidebarNav({ navValue, setNavValue, onLogout, onAdmin })
     <aside className="sidebar">
       {/* Brand */}
       <div className="sidebar-brand">
-        <div className="sidebar-brand-icon">🔥</div>
+        <div className="sidebar-brand-icon" style={{ background: 'none' }}>
+          <img src="/-prisa-icon.png" alt="Priša logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
         <div className="sidebar-brand-text">PRIŠA</div>
       </div>
 
