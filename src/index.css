@@ -824,10 +824,11 @@ body {
   margin-bottom: 4px;
 }
 .hero-welcome {
-  font-family: var(--font-heading);
-  font-size: 1.8rem;
+  font-family: var(--font-body);
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-dark);
+  line-height: 1.35;
   margin-bottom: 16px;
 }
 

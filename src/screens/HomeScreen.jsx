@@ -65,6 +65,7 @@ export default function HomeScreen({ onNavigate }) {
   const [achievementsRatio, setAchievementsRatio] = useState({ unlocked: 0, total: 0 });
   const [arenaEnabled, setArenaEnabled] = useState(false);
   const [showLevelProgression, setShowLevelProgression] = useState(false);
+  const [greeting] = useState(() => getGreetingData());
 
   const totalXp = profile?.xp || 0;
   const level = Math.floor(totalXp / 500) + 1;
@@ -117,13 +118,14 @@ export default function HomeScreen({ onNavigate }) {
       const today = new Date().toISOString().split('T')[0];
       
       // 1. Fetch quote
-      let { data: quote } = await supabase
+      let { data: quotesList } = await supabase
         .from('daily_quotes')
         .select('*')
         .eq('scheduled_date', today)
         .eq('is_active', true)
-        .limit(1)
-        .single();
+        .limit(1);
+
+      let quote = quotesList && quotesList.length > 0 ? quotesList[0] : null;
 
       if (!quote) {
         const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
@@ -167,11 +169,13 @@ export default function HomeScreen({ onNavigate }) {
       }
 
       // 4. Fetch Arena Enabled setting
-      const { data: arenaSetting } = await supabase
+      const { data: settingsList } = await supabase
         .from('app_settings')
         .select('*')
         .eq('key', 'arena_enabled')
-        .single();
+        .limit(1);
+      
+      const arenaSetting = settingsList && settingsList.length > 0 ? settingsList[0] : null;
       
       if (arenaSetting && arenaSetting.value) {
         setArenaEnabled(arenaSetting.value.enabled === true || arenaSetting.value === true);
@@ -180,7 +184,7 @@ export default function HomeScreen({ onNavigate }) {
     fetchData();
   }, [profile, level]);
 
-  const greeting = getGreetingData();
+  // greeting is stored in state to remain stable
 
   const stats = [
     { icon: <LocalFireDepartmentIcon />, value: `${profile?.streak || 0} 🔥`, label: 'Vatrice', bg: '#fff0eb', color: '#f07147' },
@@ -213,33 +217,32 @@ export default function HomeScreen({ onNavigate }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '10px',
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1))',
-                backdropFilter: 'blur(8px)',
+                background: '#f8fafc',
                 padding: '10px 16px',
                 borderRadius: 'var(--radius-lg)',
-                border: '1.5px solid rgba(255, 255, 255, 0.5)',
+                border: '1.5px solid #e2e8f0',
                 cursor: 'pointer',
                 marginBottom: '12px',
                 width: '100%',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
                 transition: 'transform 0.2s ease, background 0.2s ease',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15))';
+                e.currentTarget.style.background = '#f1f5f9';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1))';
+                e.currentTarget.style.background = '#f8fafc';
               }}
               title="Vidi razine i napredak"
             >
-              <div style={{ fontSize: '1.6rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}>{levelInfo.icon}</div>
+              <div style={{ fontSize: '1.6rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>{levelInfo.icon}</div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', color: '#fff', letterSpacing: '0.5px' }}>
+                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-dark)', letterSpacing: '0.5px' }}>
                   {levelInfo.name}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', fontWeight: 600 }}>
                   Pogledaj put razina
                 </span>
               </div>
@@ -316,11 +319,11 @@ export default function HomeScreen({ onNavigate }) {
             width: '2px',
             borderLeft: '1px dashed #ffb3a7',
           }} />
-          <div style={{ fontStyle: 'italic', fontSize: '0.92rem', lineHeight: 1.5, fontWeight: 500, paddingLeft: '8px' }}>
+          <div style={{ fontStyle: 'italic', fontSize: '1.05rem', lineHeight: 1.5, fontWeight: 500, paddingLeft: '8px' }}>
             "{dailyQuote.text}"
           </div>
           {dailyQuote.author && (
-            <div style={{ fontSize: '0.78rem', textAlign: 'right', marginTop: 6, opacity: 0.8, fontWeight: 700, color: 'var(--prisa-orange)' }}>
+            <div style={{ fontSize: '0.85rem', textAlign: 'right', marginTop: 6, opacity: 0.8, fontWeight: 700, color: 'var(--prisa-orange)' }}>
               — {dailyQuote.author}
             </div>
           )}
@@ -407,107 +410,108 @@ export default function HomeScreen({ onNavigate }) {
               style={{ 
                 flex: 1,
                 overflowY: 'auto', 
-                position: 'relative', 
-                padding: '20px',
                 borderRadius: 'var(--radius-md)',
                 background: '#fff',
                 border: '1.5px solid var(--border-color)'
               }}
             >
-              {/* Vertical path line */}
-              <div style={{
-                position: 'absolute',
-                left: '42px',
-                top: '20px',
-                bottom: '20px',
-                width: '4px',
-                background: 'transparent',
-                backgroundImage: 'linear-gradient(to bottom, #3b82f6 50%, rgba(255,255,255,0) 0%)',
-                backgroundPosition: 'left',
-                backgroundSize: '4px 14px',
-                backgroundRepeat: 'repeat-y',
-                zIndex: 1
-              }} />
+              {/* Inner relative container to hold absolute path line and items, extending to full scroll height */}
+              <div style={{ position: 'relative', padding: '24px 20px' }}>
+                {/* Vertical path line */}
+                <div style={{
+                  position: 'absolute',
+                  left: '44px', /* centered to the 48px circle badge: padding 20px + 24px half-width = 44px */
+                  top: '44px', /* starts exactly at center of first circle (padding-top 24px + 20px offset) */
+                  bottom: '44px', /* ends exactly at center of last circle */
+                  width: '4px',
+                  background: 'transparent',
+                  backgroundImage: 'linear-gradient(to bottom, #3b82f6 50%, rgba(255,255,255,0) 0%)',
+                  backgroundPosition: 'left',
+                  backgroundSize: '4px 14px',
+                  backgroundRepeat: 'repeat-y',
+                  zIndex: 1
+                }} />
 
-              {/* Levels mapping */}
-              {DEFAULT_LEVELS.map((item) => {
-                const isActive = item.level === level;
-                const isUnlocked = item.level < level;
-                const isLocked = item.level > level;
-                
-                return (
-                  <div 
-                    key={item.level} 
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      marginBottom: '20px',
-                      position: 'relative',
-                      zIndex: 2
-                    }}
-                  >
-                    {/* Circle badge */}
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '50%',
-                      background: isActive 
-                        ? 'var(--prisa-orange)' 
-                        : isUnlocked 
-                          ? '#10b981' 
-                          : '#e2e8f0',
-                      border: isActive 
-                        ? '4px solid #fff' 
-                        : '2px solid var(--border-color)',
-                      boxShadow: isActive ? '0 0 10px rgba(240, 113, 71, 0.6)' : 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.3rem',
-                      fontWeight: 'bold',
-                      color: isActive || isUnlocked ? '#fff' : 'var(--text-muted)',
-                      flexShrink: 0,
-                      marginRight: '20px'
-                    }}>
-                      {isActive ? item.icon : isUnlocked ? '✓' : item.icon}
-                    </div>
+                {/* Levels mapping */}
+                {DEFAULT_LEVELS.map((item) => {
+                  const isActive = item.level === level;
+                  const isUnlocked = item.level < level;
+                  const isLocked = item.level > level;
+                  
+                  return (
+                    <div 
+                      key={item.level} 
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        marginBottom: '20px',
+                        position: 'relative',
+                        zIndex: 2
+                      }}
+                    >
+                      {/* Circle badge */}
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        background: isActive 
+                          ? 'var(--prisa-orange)' 
+                          : isUnlocked 
+                            ? '#10b981' 
+                            : '#e2e8f0',
+                        border: isActive 
+                          ? '4px solid #fff' 
+                          : '2px solid var(--border-color)',
+                        boxShadow: isActive ? '0 0 10px rgba(240, 113, 71, 0.6)' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.3rem',
+                        fontWeight: 'bold',
+                        color: isActive || isUnlocked ? '#fff' : 'var(--text-muted)',
+                        flexShrink: 0,
+                        marginRight: '20px'
+                      }}>
+                        {isActive ? item.icon : isUnlocked ? '✓' : item.icon}
+                      </div>
 
-                    {/* Level Details */}
-                    <div style={{ flexGrow: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ 
-                          fontFamily: 'var(--font-heading)', 
-                          fontWeight: 800, 
-                          fontSize: '1rem',
-                          color: isActive ? 'var(--prisa-orange)' : 'var(--text-dark)'
-                        }}>
-                          {item.name}
-                        </span>
-                        {isActive && (
+                      {/* Level Details */}
+                      <div style={{ flexGrow: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ 
-                            background: 'var(--prisa-orange-light)', 
-                            color: 'var(--prisa-orange)', 
-                            fontSize: '0.62rem', 
+                            fontFamily: 'var(--font-heading)', 
                             fontWeight: 800, 
-                            padding: '2px 8px', 
-                            borderRadius: '10px',
-                            textTransform: 'uppercase'
+                            fontSize: '1rem',
+                            color: isActive ? 'var(--prisa-orange)' : 'var(--text-dark)'
                           }}>
-                            Tvoja
+                            {item.name}
                           </span>
-                        )}
-                        {isLocked && (
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🔒</span>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        <span>Razina {item.level}</span>
-                        <span>{item.xp} XP</span>
+                          {isActive && (
+                            <span style={{ 
+                              background: 'var(--prisa-orange-light)', 
+                              color: 'var(--prisa-orange)', 
+                              fontSize: '0.62rem', 
+                              fontWeight: 800, 
+                              padding: '2px 8px', 
+                              borderRadius: '10px',
+                              textTransform: 'uppercase'
+                            }}>
+                              Tvoja
+                            </span>
+                          )}
+                          {isLocked && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🔒</span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          <span>Razina {item.level}</span>
+                          <span>{item.xp} XP</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Footer */}

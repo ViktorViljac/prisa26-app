@@ -38,6 +38,7 @@ export default function AdminAchievements() {
   const [selectedAchievementForCodes, setSelectedAchievementForCodes] = useState(null);
   const [codes, setCodes] = useState([]);
   const [loadingCodes, setLoadingCodes] = useState(false);
+  const [bulkCount, setBulkCount] = useState(10);
 
   const fetchData = async () => {
     setLoading(true);
@@ -82,32 +83,44 @@ export default function AdminAchievements() {
 
   const handleOpenCodesModal = (ach) => {
     setSelectedAchievementForCodes(ach);
+    setBulkCount(10); // reset bulk count
     fetchCodes(ach.id);
   };
 
-  const handleGenerateCode = async () => {
+  const handleGenerateCodes = async (count = 1) => {
     if (!selectedAchievementForCodes) return;
-    // Generate code format: PRISA-XXXX-XXXX
-    const codePart1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const codePart2 = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const newCode = `PRISA-${codePart1}-${codePart2}`;
+    
+    const newCodes = [];
+    for (let i = 0; i < count; i++) {
+      const codePart1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const codePart2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+      newCodes.push({
+        achievement_id: selectedAchievementForCodes.id,
+        code: `PRISA-${codePart1}-${codePart2}`,
+        is_used: false,
+      });
+    }
 
     try {
       const { error } = await supabase
         .from('achievement_codes')
-        .insert([
-          {
-            achievement_id: selectedAchievementForCodes.id,
-            code: newCode,
-            is_used: false,
-          },
-        ]);
+        .insert(newCodes);
       if (error) throw error;
       await fetchCodes(selectedAchievementForCodes.id);
     } catch (err) {
       console.error(err);
-      alert('Greška pri generiranju koda.');
+      alert('Greška pri generiranju kodova.');
     }
+  };
+
+  const handleCopyUnusedCodes = () => {
+    const unused = codes.filter(c => !c.is_used).map(c => c.code);
+    if (unused.length === 0) {
+      alert('Nema slobodnih kodova za kopiranje.');
+      return;
+    }
+    navigator.clipboard.writeText(unused.join('\n'));
+    alert(`Kopirano ${unused.length} slobodnih kodova!`);
   };
 
   const handleDeleteCode = async (codeId) => {
@@ -518,13 +531,36 @@ export default function AdminAchievements() {
               Generiraj jednokratne kodove koje korisnici mogu iskoristiti za otključavanje ovog postignuća. Svaki kod se može iskoristiti samo jednom.
             </p>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 20, background: '#f8fafc', padding: 12, borderRadius: 'var(--radius-md)', border: '1.5px solid #e2e8f0' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-dark)' }}>
-                Ukupno generirano: {codes.length}
+                🎫 Ukupno generirano: {codes.length}
               </span>
-              <button className="btn btn-primary" onClick={handleGenerateCode}>
-                <AddIcon style={{ fontSize: 16, marginRight: 4 }} /> Generiraj Novi Kod
-              </button>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button 
+                  className="btn btn-outline" 
+                  onClick={handleCopyUnusedCodes}
+                  style={{ padding: '6px 12px', fontSize: '0.82rem' }}
+                >
+                  📋 Kopiraj sve slobodne
+                </button>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 8 }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Količina:</span>
+                  <input
+                    type="number"
+                    value={bulkCount}
+                    onChange={(e) => setBulkCount(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+                    min="1"
+                    max="100"
+                    style={{ width: 56, padding: '4px 6px', fontSize: '0.82rem', textAlign: 'center', textTransform: 'none', letterSpacing: 'normal' }}
+                  />
+                </div>
+
+                <button className="btn btn-primary" onClick={() => handleGenerateCodes(bulkCount)} style={{ padding: '6px 12px', fontSize: '0.82rem' }}>
+                  <AddIcon style={{ fontSize: 14, marginRight: 2 }} /> Generiraj
+                </button>
+              </div>
             </div>
 
             {loadingCodes && codes.length === 0 ? (

@@ -36,6 +36,8 @@ export default function ProfileScreen({ onLogout }) {
 
   // Privacy Policy modal
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [showEditDetails, setShowEditDetails] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   const level = Math.floor((profile?.xp || 0) / 500) + 1;
   const avatarLetter = profile?.name?.charAt(0)?.toUpperCase() || '?';
@@ -255,7 +257,7 @@ export default function ProfileScreen({ onLogout }) {
   ];
 
   return (
-    <div>
+    <div className="fade-in-content">
       {/* Hero */}
       <div className="profile-hero">
         <div
@@ -308,218 +310,102 @@ export default function ProfileScreen({ onLogout }) {
         ))}
       </div>
 
-      {/* Edit Profile Details Form */}
-      <div className="profile-stats-card" style={{ marginTop: 24, padding: 20 }}>
-        <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          👤 Osobni podaci
-        </h3>
-        
-        {!profile?.has_completed_details && (
-          <div style={{
-            background: 'var(--prisa-orange-light)',
-            color: 'var(--prisa-orange)',
-            fontSize: '0.8rem',
-            fontWeight: 800,
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-sm)',
-            marginBottom: 16,
-            border: '1px solid rgba(240, 113, 71, 0.2)',
-            lineHeight: 1.4
-          }}>
-            🎁 Popuni sve obvezne podatke (Dob, Spol, Grad, Škola/Fakultet) za nagradu od +100 XP!
+      {/* Osobni podaci Gumb */}
+      <div 
+        className="profile-stats-card hover-scale" 
+        style={{ marginTop: 24, padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} 
+        onClick={() => {
+          setSaveSuccess('');
+          setShowEditDetails(true);
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: '1.4rem' }}>👤</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-dark)' }}>Osobni podaci</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Ažuriraj svoje demografske podatke i osvoji XP</div>
           </div>
-        )}
-
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Dob (godine) *</label>
-          <input
-            type="number"
-            value={age}
-            onChange={e => setAge(e.target.value)}
-            placeholder="npr. 18"
-            min="1"
-            max="120"
-            style={{ width: '100%', marginTop: 4 }}
-          />
         </div>
-
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Spol *</label>
-          <select
-            value={gender}
-            onChange={e => setGender(e.target.value)}
-            style={{ width: '100%', marginTop: 4, padding: '8px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', background: '#fff' }}
-          >
-            <option value="">Odaberi spol</option>
-            <option value="Muško">Muško</option>
-            <option value="Žensko">Žensko</option>
-            <option value="Drugo">Drugo</option>
-          </select>
-        </div>
-
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Grad *</label>
-          <input
-            type="text"
-            value={city}
-            onChange={e => setCity(e.target.value)}
-            placeholder="npr. Split"
-            style={{ width: '100%', marginTop: 4 }}
-          />
-        </div>
-
-        <div className="form-group" style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Škola ili Fakultet *</label>
-          <input
-            type="text"
-            value={schoolOrCollege}
-            onChange={e => setSchoolOrCollege(e.target.value)}
-            placeholder="npr. Druga gimnazija"
-            style={{ width: '100%', marginTop: 4 }}
-          />
-        </div>
-
-        <div className="form-group" style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Bio (Kratak opis)</label>
-          <textarea
-            value={bio}
-            onChange={e => setBio(e.target.value)}
-            placeholder="Napiši nešto o sebi..."
-            rows="3"
-            style={{ width: '100%', marginTop: 4, padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', resize: 'vertical' }}
-          />
-        </div>
-
-        <button
-          className="btn btn-primary btn-block"
-          onClick={handleSaveDetails}
-          disabled={savingDetails}
-        >
-          {savingDetails ? <span className="loading-spinner" /> : 'Spremi podatke'}
-        </button>
-
-        {saveSuccess && (
-          <div style={{ marginTop: 12, fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)', textAlign: 'center' }}>
-            {saveSuccess}
-          </div>
-        )}
+        <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>➔</span>
       </div>
 
+      {/* Povratne informacije Gumb */}
+      <div 
+        className="profile-stats-card hover-scale" 
+        style={{ marginTop: 16, padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} 
+        onClick={() => {
+          setFeedbackSuccess('');
+          setShowFeedbackModal(true);
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: '1.4rem' }}>📬</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-dark)' }}>Povratne informacije</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Podijeli svoje mišljenje ili prijedloge s nama</div>
+          </div>
+        </div>
+        <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>➔</span>
+      </div>
 
-
-      {/* Notifications and Privacy utilities */}
+      {/* Postavke i Sigurnost s integriranim PWA gumbom */}
       <div className="profile-stats-card" style={{ marginTop: 24, padding: 20 }}>
         <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', marginBottom: 16 }}>
           ⚙️ Postavke i Sigurnost
         </h3>
         
-        <button
-          className="btn btn-primary btn-block"
-          onClick={handlePushSubscribe}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            gap: '8px', 
-            marginBottom: '12px',
-            background: 'var(--prisa-blue)',
-            borderColor: 'var(--prisa-blue)'
-          }}
-        >
-          <NotificationsIcon style={{ fontSize: 18 }} />
-          Pretplati se na obavijesti
-        </button>
-
-        <button
-          className="btn btn-outline btn-block"
-          onClick={() => setShowPrivacyPolicy(true)}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            gap: '8px'
-          }}
-        >
-          <ShieldIcon style={{ fontSize: 18 }} />
-          Politika privatnosti
-        </button>
-      </div>
-
-      {/* Feedback section */}
-      <div className="profile-stats-card" style={{ marginTop: 24, padding: 20 }}>
-        <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', marginBottom: 6 }}>
-          📬 Povratne informacije
-        </h3>
-        <p style={{ fontSize: '0.82rem', color: 'var(--text-gray)', marginBottom: 14 }}>
-          Imaš ideju ili prijedlog? Tvoje mišljenje nam pomaže poboljšati aplikaciju!
-        </p>
-        
-        <form onSubmit={handleFeedbackSubmit}>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 6 }}>
-              Ocjena aplikacije:
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[1, 2, 3, 4, 5].map((val) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => setFeedbackRating(val)}
-                  style={{
-                    flex: 1,
-                    padding: '8px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1.5px solid var(--border-color)',
-                    background: feedbackRating >= val ? 'var(--prisa-orange-light)' : '#fff',
-                    color: feedbackRating >= val ? 'var(--prisa-orange)' : 'var(--text-muted)',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    fontSize: '1rem'
-                  }}
-                >
-                  ⭐
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <textarea
-              value={feedbackText}
-              onChange={e => setFeedbackText(e.target.value)}
-              placeholder="Napiši svoje komentare ili prijedloge..."
-              rows="3"
-              required
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', resize: 'vertical' }}
-            />
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {installPrompt && (
+            <button
+              className="btn btn-primary btn-block"
+              onClick={handleInstallClick}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '8px',
+                background: 'linear-gradient(90deg, var(--prisa-teal), #2dd4bf)', 
+                border: 'none',
+                color: '#fff',
+                fontWeight: 700
+              }}
+            >
+              📱 Instaliraj Aplikaciju
+            </button>
+          )}
 
           <button
-            type="submit"
             className="btn btn-outline btn-block"
-            disabled={submittingFeedback || !feedbackText.trim()}
+            onClick={handlePushSubscribe}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '8px', 
+              background: 'var(--prisa-blue)',
+              borderColor: 'var(--prisa-blue)',
+              color: '#fff'
+            }}
           >
-            {submittingFeedback ? <span className="loading-spinner" /> : 'Pošalji poruku'}
+            <NotificationsIcon style={{ fontSize: 18 }} />
+            Pretplati se na obavijesti
           </button>
-        </form>
 
-        {feedbackSuccess && (
-          <div style={{ marginTop: 12, fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)', textAlign: 'center' }}>
-            {feedbackSuccess}
-          </div>
-        )}
+          <button
+            className="btn btn-outline btn-block"
+            onClick={() => setShowPrivacyPolicy(true)}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '8px'
+            }}
+          >
+            <ShieldIcon style={{ fontSize: 18 }} />
+            Politika privatnosti
+          </button>
+        </div>
       </div>
-
-      {/* PWA Install Button */}
-      {installPrompt && (
-        <button
-          className="btn btn-primary btn-block btn-large"
-          onClick={handleInstallClick}
-          style={{ marginTop: 24, marginBottom: 8, background: 'linear-gradient(90deg, var(--prisa-teal), #2dd4bf)', border: 'none' }}
-        >
-          📱 Instaliraj Aplikaciju
-        </button>
-      )}
 
       {/* Logout */}
       <button
@@ -531,11 +417,225 @@ export default function ProfileScreen({ onLogout }) {
         Odjavi se
       </button>
 
+      {/* ==========================================
+          MODALS / DIALOGS
+          ========================================== */}
+
+      {/* Osobni Podaci Modal */}
+      {showEditDetails && (
+        <div className="dialog-overlay" onClick={() => setShowEditDetails(false)}>
+          <div 
+            className="dialog-card slide-up-modal" 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              padding: '24px', 
+              maxWidth: '440px',
+              background: '#fcfaf7',
+              border: '2px solid var(--border-color)',
+              borderRadius: 'var(--radius-lg)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-dark)', margin: 0 }}>
+                👤 Osobni podaci
+              </h2>
+              <button 
+                onClick={() => setShowEditDetails(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.8rem', cursor: 'pointer', color: 'var(--text-muted)', lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+
+            {!profile?.has_completed_details && (
+              <div style={{
+                background: 'var(--prisa-orange-light)',
+                color: 'var(--prisa-orange)',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                padding: '8px 12px',
+                borderRadius: 'var(--radius-sm)',
+                marginBottom: 16,
+                border: '1px solid rgba(240, 113, 71, 0.2)',
+                lineHeight: 1.4
+              }}>
+                🎁 Popuni sve obvezne podatke (Dob, Spol, Grad, Škola/Fakultet) za nagradu od +100 XP!
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}>
+              <div className="form-group">
+                <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Dob (godine) *</label>
+                <input
+                  type="number"
+                  value={age}
+                  onChange={e => setAge(e.target.value)}
+                  placeholder="npr. 18"
+                  min="1"
+                  max="120"
+                  style={{ width: '100%', marginTop: 4 }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Spol *</label>
+                <select
+                  value={gender}
+                  onChange={e => setGender(e.target.value)}
+                  style={{ width: '100%', marginTop: 4, padding: '8px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', background: '#fff' }}
+                >
+                  <option value="">Odaberi spol</option>
+                  <option value="Muško">Muško</option>
+                  <option value="Žensko">Žensko</option>
+                  <option value="Drugo">Drugo</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Grad *</label>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={e => setCity(e.target.value)}
+                  placeholder="npr. Split"
+                  style={{ width: '100%', marginTop: 4 }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Škola ili Fakultet *</label>
+                <input
+                  type="text"
+                  value={schoolOrCollege}
+                  onChange={e => setSchoolOrCollege(e.target.value)}
+                  placeholder="npr. Druga gimnazija"
+                  style={{ width: '100%', marginTop: 4 }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Bio (Kratak opis)</label>
+                <textarea
+                  value={bio}
+                  onChange={e => setBio(e.target.value)}
+                  placeholder="Napiši nešto o sebi..."
+                  rows="3"
+                  style={{ width: '100%', marginTop: 4, padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', resize: 'vertical' }}
+                />
+              </div>
+
+              <button
+                className="btn btn-primary btn-block"
+                onClick={handleSaveDetails}
+                disabled={savingDetails}
+                style={{ marginTop: 8 }}
+              >
+                {savingDetails ? <span className="loading-spinner" /> : 'Spremi podatke'}
+              </button>
+
+              {saveSuccess && (
+                <div style={{ marginTop: 8, fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)', textAlign: 'center' }}>
+                  {saveSuccess}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Povratne Informacije Modal */}
+      {showFeedbackModal && (
+        <div className="dialog-overlay" onClick={() => setShowFeedbackModal(false)}>
+          <div 
+            className="dialog-card slide-up-modal" 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              padding: '24px', 
+              maxWidth: '440px',
+              background: '#fcfaf7',
+              border: '2px solid var(--border-color)',
+              borderRadius: 'var(--radius-lg)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-dark)', margin: 0 }}>
+                📬 Povratne informacije
+              </h2>
+              <button 
+                onClick={() => setShowFeedbackModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.8rem', cursor: 'pointer', color: 'var(--text-muted)', lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-gray)', marginBottom: 14, textAlign: 'left' }}>
+              Imaš ideju ili prijedlog? Tvoje mišljenje nam pomaže poboljšati aplikaciju!
+            </p>
+            
+            <form onSubmit={handleFeedbackSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'left' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 6 }}>
+                  Ocjena aplikacije:
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[1, 2, 3, 4, 5].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setFeedbackRating(val)}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1.5px solid var(--border-color)',
+                        background: feedbackRating >= val ? 'var(--prisa-orange-light)' : '#fff',
+                        color: feedbackRating >= val ? 'var(--prisa-orange)' : 'var(--text-muted)',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        fontSize: '1rem'
+                      }}
+                    >
+                      ⭐
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <textarea
+                  value={feedbackText}
+                  onChange={e => setFeedbackText(e.target.value)}
+                  placeholder="Napiši svoje komentare ili prijedloge..."
+                  rows="3"
+                  required
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', resize: 'vertical' }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-outline btn-block"
+                disabled={submittingFeedback || !feedbackText.trim()}
+              >
+                {submittingFeedback ? <span className="loading-spinner" /> : 'Pošalji poruku'}
+              </button>
+            </form>
+
+            {feedbackSuccess && (
+              <div style={{ marginTop: 12, fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)', textAlign: 'center' }}>
+                {feedbackSuccess}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Privacy Policy Modal */}
       {showPrivacyPolicy && (
         <div className="dialog-overlay" onClick={() => setShowPrivacyPolicy(false)}>
           <div 
-            className="dialog-card" 
+            className="dialog-card slide-up-modal" 
             onClick={e => e.stopPropagation()}
             style={{
               padding: '24px',
@@ -606,4 +706,3 @@ export default function ProfileScreen({ onLogout }) {
     </div>
   );
 }
-

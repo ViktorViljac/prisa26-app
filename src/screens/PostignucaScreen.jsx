@@ -225,13 +225,50 @@ export default function PostignucaScreen() {
               key={ach.id} 
               className="achievement-card unlocked hover-scale"
               onClick={() => setSelectedAchievement({ ...ach, isUnlocked: true })}
-              style={{ cursor: 'pointer', padding: '16px' }}
+              style={{ 
+                cursor: 'pointer', 
+                padding: '20px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minHeight: '160px',
+                position: 'relative',
+                background: '#ffffff',
+                border: '1.5px solid var(--prisa-teal)',
+                borderRadius: 'var(--radius-md)',
+                boxShadow: '0 2px 8px rgba(13, 148, 136, 0.05)'
+              }}
             >
-              <div className="achievement-icon" style={{ fontSize: '2rem', marginBottom: '8px' }}>{ach.icon || '🏅'}</div>
-              <div className="achievement-title" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>{ach.title}</div>
-              <div className="achievement-desc-preview" style={{ fontSize: '0.75rem', opacity: 0.8, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                {ach.description}
+              {/* Checkmark in top right */}
+              <div style={{ position: 'absolute', top: '12px', right: '12px', color: 'var(--prisa-teal)', display: 'flex', alignItems: 'center' }}>
+                <CheckCircleIcon style={{ fontSize: '16px' }} />
               </div>
+
+              <div className="achievement-icon" style={{ fontSize: '2.2rem', margin: '0 0 8px 0' }}>{ach.icon || '🏅'}</div>
+              
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                <div className="achievement-title" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '6px', textAlign: 'center' }}>
+                  {ach.title}
+                </div>
+                <div className="achievement-desc-preview" style={{ fontSize: '0.78rem', color: 'var(--text-gray)', opacity: 0.9, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textAlign: 'center', lineHeight: 1.4, width: '100%' }}>
+                  {ach.description}
+                </div>
+              </div>
+
+              {ach.xp_reward > 0 && (
+                <div style={{ 
+                  marginTop: '10px',
+                  fontSize: '0.72rem', 
+                  fontWeight: 800, 
+                  color: 'var(--prisa-teal)',
+                  background: 'var(--prisa-teal-pastel)',
+                  padding: '3px 8px',
+                  borderRadius: '10px',
+                }}>
+                  ⚡ {ach.xp_reward} XP
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -268,51 +305,69 @@ export default function PostignucaScreen() {
                 className={`achievement-card locked hover-scale ${isComingSoon ? 'coming-soon' : ''}`}
                 onClick={() => setSelectedAchievement({ ...ach, isUnlocked: false, isMystery, isComingSoon })}
                 style={{ 
-                  filter: 'grayscale(1)', 
-                  opacity: 0.65,
+                  cursor: 'pointer', 
+                  padding: '20px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  minHeight: '160px',
                   position: 'relative',
-                  border: isComingSoon ? '1.5px dashed var(--prisa-orange)' : undefined,
-                  background: isComingSoon ? '#fffbeb' : undefined,
-                  cursor: 'pointer',
-                  padding: '16px'
+                  background: isComingSoon ? '#fffbeb' : '#f8fafc',
+                  border: isComingSoon ? '1.5px dashed #d97706' : '1.5px solid #e2e8f0',
+                  borderRadius: 'var(--radius-md)',
+                  opacity: 0.8,
+                  filter: 'grayscale(0.3)'
                 }}
               >
-                <div className="achievement-icon" style={{ fontSize: '2rem', marginBottom: '8px' }}>{isMystery ? '❓' : (ach.icon || '🏅')}</div>
-                <div className="achievement-title" style={{ fontSize: '0.95rem', marginBottom: '4px' }}>{isMystery ? '???' : ach.title}</div>
-                
-                {isComingSoon && ach.start_date && (
-                  <div style={{ 
-                    marginTop: 8, 
-                    fontSize: '0.75rem', 
-                    fontWeight: 700, 
-                    color: '#d97706',
-                    background: '#fef3c7',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    display: 'inline-block'
-                  }}>
-                    ⏳ {formatDate(ach.start_date)}
-                  </div>
-                )}
-
-                <div className="achievement-lock-overlay">
+                {/* Lock or Status Badge in top right */}
+                <div style={{ position: 'absolute', top: '12px', right: '12px', color: 'var(--text-muted)' }}>
                   {isComingSoon ? (
                     <span style={{ 
-                      fontSize: '0.75rem', 
+                      fontSize: '0.62rem', 
                       fontWeight: 800, 
                       color: '#d97706',
-                      background: '#fff',
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      border: '1px solid #f59e0b',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                      background: '#fef3c7',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
                     }}>
-                      Uskoro
+                      USKORO
                     </span>
                   ) : (
-                    <LockIcon className="achievement-lock-icon" style={{ fontSize: '1.5rem' }} />
+                    <LockIcon style={{ fontSize: '14px', color: 'var(--text-muted)' }} />
                   )}
                 </div>
+
+                <div className="achievement-icon" style={{ fontSize: '2.2rem', margin: '0 0 8px 0', opacity: 0.6 }}>
+                  {isMystery ? '❓' : (ach.icon || '🏅')}
+                </div>
+                
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                  <div className="achievement-title" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '6px', textAlign: 'center', opacity: 0.8 }}>
+                    {isMystery ? 'Tajna' : ach.title}
+                  </div>
+                  <div className="achievement-desc-preview" style={{ fontSize: '0.78rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textAlign: 'center', lineHeight: 1.4, width: '100%' }}>
+                    {isMystery 
+                      ? 'Ovaj izazov je tajna dok ga ne otključaš!' 
+                      : isComingSoon 
+                        ? 'Ovaj izazov stiže uskoro. Budi spreman!' 
+                        : ach.description}
+                  </div>
+                </div>
+
+                {ach.xp_reward > 0 && (
+                  <div style={{ 
+                    marginTop: '10px',
+                    fontSize: '0.72rem', 
+                    fontWeight: 800, 
+                    color: isComingSoon ? '#d97706' : 'var(--text-muted)',
+                    background: isComingSoon ? '#fef3c7' : '#e2e8f0',
+                    padding: '3px 8px',
+                    borderRadius: '10px',
+                  }}>
+                    ⚡ {isMystery ? '?' : ach.xp_reward} XP
+                  </div>
+                )}
               </div>
             );
           })}
