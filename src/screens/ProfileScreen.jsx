@@ -20,6 +20,8 @@ export default function ProfileScreen({ onLogout }) {
   const [installPrompt, setInstallPrompt] = useState(window.deferredPrompt);
 
   // Profile Details fields
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [city, setCity] = useState('');
@@ -53,6 +55,8 @@ export default function ProfileScreen({ onLogout }) {
   // Initialize fields on load
   useEffect(() => {
     if (profile) {
+      setFirstName(profile.first_name || '');
+      setLastName(profile.last_name || '');
       setAge(profile.age || '');
       setGender(profile.gender || '');
       setCity(profile.city || '');
@@ -123,6 +127,8 @@ export default function ProfileScreen({ onLogout }) {
       const { error } = await supabase
         .from('profiles')
         .update({
+          first_name: firstName.trim() || null,
+          last_name: lastName.trim() || null,
           age: parsedAge,
           gender,
           city: city.trim(),
@@ -134,6 +140,8 @@ export default function ProfileScreen({ onLogout }) {
       if (error) throw error;
       
       posthog.capture('profile_details_updated', {
+        has_first_name: !!firstName.trim(),
+        has_last_name: !!lastName.trim(),
         has_age: !!parsedAge,
         has_gender: !!gender,
         has_city: !!city.trim(),
@@ -147,6 +155,8 @@ export default function ProfileScreen({ onLogout }) {
       } else {
         setSaveSuccess('✅ Osobni podaci uspješno spremljeni!');
       }
+      // Auto-close modal after showing success
+      setTimeout(() => setShowEditDetails(false), 1500);
     } catch (err) {
       console.error(err);
       alert('Greška prilikom spremanja podataka.');
@@ -172,6 +182,8 @@ export default function ProfileScreen({ onLogout }) {
       setFeedbackSuccess('Hvala ti na povratnim informacijama! ❤️');
       setFeedbackText('');
       setFeedbackRating(5);
+      // Auto-close modal after showing success
+      setTimeout(() => setShowFeedbackModal(false), 1500);
     } catch (err) {
       console.error(err);
       alert('Greška prilikom slanja povratnih informacija.');
@@ -464,6 +476,29 @@ export default function ProfileScreen({ onLogout }) {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'left' }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Ime</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    placeholder="npr. Ivan"
+                    style={{ width: '100%', marginTop: 4 }}
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Prezime</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    placeholder="npr. Horvat"
+                    style={{ width: '100%', marginTop: 4 }}
+                  />
+                </div>
+              </div>
+
               <div className="form-group">
                 <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Dob (godine) *</label>
                 <input

@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import XpRing from '../components/ui/XpRing';
 import BoltIcon from '@mui/icons-material/Bolt';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import StarsIcon from '@mui/icons-material/Stars';
-import TimerIcon from '@mui/icons-material/Timer';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
@@ -195,74 +193,74 @@ export default function HomeScreen({ onNavigate }) {
 
   return (
     <div style={{ opacity: mounted ? 1 : 0, transition: 'opacity 0.4s ease' }}>
-      {/* Hero card */}
+      {/* Hero card — dark premium glassmorphic */}
       <div className="hero-card">
         <div className="hero-card-bg" />
-        <div className="hero-greeting">{greeting.g}, {profile?.name?.split(' ')[0] || 'Korisnik'} 👋</div>
-        <div className="hero-welcome">{greeting.s}</div>
+        <p className="hero-greeting">{greeting.g}, {profile?.name?.split(' ')[0] || 'Korisnik'} <span style={{ display: 'inline-block', transformOrigin: '70% 70%', animation: 'wave 2.4s ease-in-out infinite' }}>👋</span></p>
 
-        <div className="xp-section">
-          <XpRing
-            level={level}
-            xpInto={xpIntoLevel}
-            xpTotal={xpForNext}
-            animatedXp={animatedXp}
-          />
-          <div className="xp-info">
-            {/* Large Level badge - full width mobile optimized */}
-            <div 
-              onClick={() => setShowLevelProgression(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                background: '#f8fafc',
-                padding: '10px 16px',
-                borderRadius: 'var(--radius-lg)',
-                border: '1.5px solid #e2e8f0',
-                cursor: 'pointer',
-                marginBottom: '12px',
-                width: '100%',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
-                transition: 'transform 0.2s ease, background 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.background = '#f1f5f9';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = '#f8fafc';
-              }}
-              title="Vidi Put Ratnika"
-            >
-              <div style={{ fontSize: '1.6rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>{levelInfo.icon}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-dark)', letterSpacing: '0.5px' }}>
-                  {levelInfo.name}
-                </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', fontWeight: 600 }}>
-                  Pogledaj Put Ratnika
-                </span>
+        {/* Split greeting subtitle so we can apply gradient accent */}
+        {(() => {
+          const text = greeting.s;
+          // Try splitting on the last emoji or exclamation
+          const parts = text.split(/(?=\s[\u{1F300}-\u{1FAFF}])/u);
+          if (parts.length > 1) {
+            return (
+              <h1 className="hero-welcome">
+                {parts[0]} <span className="accent">{parts.slice(1).join('')}</span>
+              </h1>
+            );
+          }
+          return <h1 className="hero-welcome">{text}</h1>;
+        })()}
+
+        <div className="hero-inner-card">
+          {/* Level top — ring + level meta */}
+          <div className="hero-level-top">
+            <div className="hero-ring-wrap">
+              <svg width="110" height="110" viewBox="0 0 118 118">
+                <circle cx="59" cy="59" r="52" fill="none" stroke="rgba(255,255,255,.1)" strokeWidth="9"/>
+                <circle cx="59" cy="59" r="52" fill="none" stroke="url(#hero-ring-grad)" strokeWidth="9"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 52}
+                  strokeDashoffset={2 * Math.PI * 52 - (xpIntoLevel / xpForNext) * 2 * Math.PI * 52}
+                  style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}
+                />
+                <defs>
+                  <linearGradient id="hero-ring-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stopColor="#ffd166"/>
+                    <stop offset="1" stopColor="#ff6b4a"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="hero-ring-center">
+                <b>{level}</b>
+                <span>RAZINA</span>
               </div>
             </div>
 
-            <h3 style={{ marginTop: '2px' }}>{animatedXp} XP</h3>
-            <p>{xpIntoLevel} / {xpForNext} do razine {level + 1}</p>
-            <div className="xp-progress-bar">
-              <div
-                className="xp-progress-fill"
-                style={{ width: `${(xpIntoLevel / xpForNext) * 100}%` }}
-              />
+            <div className="hero-level-meta">
+              <div className="badge-row">
+                <span className="level-icon">{levelInfo.icon}</span>
+                <span className="level-name">{levelInfo.name}</span>
+              </div>
+              <button className="level-link" onClick={() => setShowLevelProgression(true)}>
+                Pogledaj Put Ratnika →
+              </button>
             </div>
           </div>
-        </div>
 
-        <div className="hero-bottom-row">
-          <div className="countdown-chip">
-            <TimerIcon />
-            Reset: {countdown}
+          {/* XP section */}
+          <div className="hero-xp">
+            <div className="hero-xp-num">{animatedXp} <small>XP</small></div>
+            <div className="hero-xp-sub">{xpIntoLevel} / {xpForNext} do razine {level + 1}</div>
+            <div className="hero-xp-bar">
+              <i className="hero-xp-bar-fill" style={{ '--pct': `${(xpIntoLevel / xpForNext) * 100}%` }}></i>
+            </div>
+          </div>
+
+          {/* Reset countdown */}
+          <div className="hero-reset-row">
+            ⏱️ Reset za <span className="timer-value">{countdown}</span>
           </div>
         </div>
       </div>
