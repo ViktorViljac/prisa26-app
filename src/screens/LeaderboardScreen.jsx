@@ -13,23 +13,24 @@ export default function LeaderboardScreen() {
   useEffect(() => {
     const fetchData = async () => {
       const [lbRes, teamsRes] = await Promise.all([
-        supabase.from('profiles').select('id, name, avatar_url, xp, level, streak, team_id, teams(name, color, icon)').eq('is_banned', false).order('xp', { ascending: false }).limit(50),
+        supabase.from('profiles').select('id, name, avatar_url, xp, level, streak, team_id, teams(name, color, icon)').eq('is_banned', false).eq('hide_from_leaderboard', false).order('xp', { ascending: false }).limit(50),
         supabase.from('teams').select('*'),
       ]);
-
+      
       let aggregatedTeams = [];
       if (lbRes.data) setLeaderboard(lbRes.data);
-
+      
       if (teamsRes.data) {
         // Fetch all active profiles' xp to calculate aggregate team scores
         const { data: allProfiles } = await supabase
           .from('profiles')
           .select('team_id, xp')
-          .eq('is_banned', false);
-
+          .eq('is_banned', false)
+          .eq('hide_from_leaderboard', false);
+        
         const teamScores = {};
         const teamMemberCounts = {};
-
+        
         if (allProfiles) {
           allProfiles.forEach(p => {
             if (p.team_id) {
@@ -38,20 +39,21 @@ export default function LeaderboardScreen() {
             }
           });
         }
-
+        
         aggregatedTeams = teamsRes.data.map(team => ({
           ...team,
           score: teamScores[team.id] || 0,
           member_count: teamMemberCounts[team.id] || 0
         })).sort((a, b) => b.score - a.score);
-
+        
         setTeams(aggregatedTeams);
       }
     };
     fetchData();
 
-    // Realtime subscription
-    const channelId = `leaderboard-changes-${Date.now()}`;
+    // Realtime subscription - using a unique random suffix to avoid channel reuse conflicts
+    const randomSuffix = Math.random().toString(36).slice(2, 11);
+    const channelId = `leaderboard-changes-${randomSuffix}`;
     const channel = supabase
       .channel(channelId)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
@@ -84,8 +86,7 @@ export default function LeaderboardScreen() {
           {podiumOrder.map((user, i) => {
             const avatarLetter = user.name?.charAt(0)?.toUpperCase() || '?';
             return (
-              N < div key = { user.id } className = {`podium-slot hover-scale ${podiumClasses[i]}`
-          }>
+              <div key={user.id} className={`podium-slot hover-scale ${podiumClasses[i]}`}>
                 <div className="podium-medal">{podiumMedals[i]}</div>
                 <div className="podium-avatar">
                   {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
@@ -94,57 +95,54 @@ export default function LeaderboardScreen() {
                 <div className="podium-xp">{user.xp} XP</div>
                 <div className={`podium-bar`} />
               </div>
-      );
+            );
           })}
-    </div>
-  )
-}
-
-{/* Rank list */ }
-<div className="rank-list">
-  <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, margin: '24px 0 16px 0', color: 'var(--text-dark)' }}>
-    👥 Ukupni poredak
-  </h3>
-  {rest.map((user, i) => {
-    const rank = i + 4;
-    const isMe = user.id === profile?.id;
-    const avatarLetter = user.name?.charAt(0)?.toUpperCase() || '?';
-    return (
-      <div key={user.id} className={`rank-card hover-scale ${isMe ? 'me' : ''}`}>
-        <div className="rank-number">{rank}.</div>
-        <div className="rank-avatar">
-          {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
         </div>
-        <div className="rank-info">
-          <div className="rank-name">{user.name}{isMe && ' (ti)'}</div>
-          <div className="rank-team">{user.teams?.name || 'Bez tima'}</div>
-        </div>
-        <div className="rank-points">{user.xp} XP</div>
-      </div>
-    );
-  })}
-</div>
+      )}
 
-{/* Teams */ }
-{
-  teams.length > 0 && (
-    <>
-      <div className="teams-section-title" style={{ marginTop: '32px' }}>🏆 Timovi</div>
-      <div className="teams-grid">
-        {teams.map(team => (
-          <div key={team.id} className="team-card hover-scale">
-            <div className="team-card-icon">{team.icon || '🏳️'}</div>
-            <div className="team-card-name">{team.name}</div>
-            <div className="team-card-members">{team.member_count || 0} članova</div>
-            <div className="team-card-score" style={{ color: team.color || 'var(--prisa-orange)' }}>
-              {team.score || 0} bodova
+      {/* Rank list */}
+      <div className="rank-list">
+        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, margin: '24px 0 16px 0', color: 'var(--text-dark)' }}>
+          👥 Ukupni poredak
+        </h3>
+        {rest.map((user, i) => {
+          const rank = i + 4;
+          const isMe = user.id === profile?.id;
+          const avatarLetter = user.name?.charAt(0)?.toUpperCase() || '?';
+          return (
+            <div key={user.id} className={`rank-card hover-scale ${isMe ? 'me' : ''}`}>
+              <div className="rank-number">{rank}.</div>
+              <div className="rank-avatar">
+                {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
+              </div>
+              <div className="rank-info">
+                <div className="rank-name">{user.name}{isMe && ' (ti)'}</div>
+                <div className="rank-team">{user.teams?.name || 'Bez tima'}</div>
+              </div>
+              <div className="rank-points">{user.xp} XP</div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-    </>
-  )
-}
-    </div >
+
+      {/* Teams */}
+      {teams.length > 0 && (
+        <>
+          <div className="teams-section-title" style={{ marginTop: '32px' }}>🏆 Timovi</div>
+          <div className="teams-grid">
+            {teams.map(team => (
+              <div key={team.id} className="team-card hover-scale">
+                <div className="team-card-icon">{team.icon || '🏳️'}</div>
+                <div className="team-card-name">{team.name}</div>
+                <div className="team-card-members">{team.member_count || 0} članova</div>
+                <div className="team-card-score" style={{ color: team.color || 'var(--prisa-orange)' }}>
+                  {team.score || 0} bodova
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
