@@ -1,7 +1,5 @@
--- ==========================================================================
 -- PRIŠA 2026 — Database Schema Updates (V1)
 -- Run this in your Supabase SQL Editor
--- ==========================================================================
 
 -- 1. Add column to profiles for hiding from leaderboard
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS hide_from_leaderboard boolean DEFAULT false;
