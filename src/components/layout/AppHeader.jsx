@@ -11,8 +11,17 @@ export default function AppHeader({ onProfile }) {
   return (
     <header className="mobile-header">
       <div className="mobile-header-top">
-        <div className="mobile-brand" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo-horizontalni.png" alt="PRIŠA" style={{ maxHeight: 26, maxWidth: 110, objectFit: 'contain' }} />
+        <div className="mobile-brand" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <img src="/logo-horizontalni.png" alt="PRIŠA" style={{ maxHeight: 35, maxWidth: 140, objectFit: 'contain' }} />
+          <sup style={{
+            fontFamily: 'var(--font-hand)',
+            fontSize: '1rem',
+            fontWeight: 800,
+            color: 'var(--prisa-orange)',
+            transform: 'rotate(-8deg) translateY(-2px)',
+            display: 'inline-block',
+            marginLeft: 2
+          }}>2026</sup>
         </div>
         <div className="mobile-avatar" onClick={onProfile} style={{ cursor: 'pointer', marginLeft: 'auto' }}>
           {profile?.avatar_url ? (

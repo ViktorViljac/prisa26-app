@@ -14,10 +14,39 @@ export default function LeaderboardScreen() {
     const fetchData = async () => {
       const [lbRes, teamsRes] = await Promise.all([
         supabase.from('profiles').select('id, name, avatar_url, xp, level, streak, team_id, teams(name, color, icon)').eq('is_banned', false).order('xp', { ascending: false }).limit(50),
-        supabase.from('teams').select('*').order('score', { ascending: false }),
+        supabase.from('teams').select('*'),
       ]);
+      
+      let aggregatedTeams = [];
       if (lbRes.data) setLeaderboard(lbRes.data);
-      if (teamsRes.data) setTeams(teamsRes.data);
+      
+      if (teamsRes.data) {
+        // Fetch all active profiles' xp to calculate aggregate team scores
+        const { data: allProfiles } = await supabase
+          .from('profiles')
+          .select('team_id, xp')
+          .eq('is_banned', false);
+        
+        const teamScores = {};
+        const teamMemberCounts = {};
+        
+        if (allProfiles) {
+          allProfiles.forEach(p => {
+            if (p.team_id) {
+              teamScores[p.team_id] = (teamScores[p.team_id] || 0) + (p.xp || 0);
+              teamMemberCounts[p.team_id] = (teamMemberCounts[p.team_id] || 0) + 1;
+            }
+          });
+        }
+        
+        aggregatedTeams = teamsRes.data.map(team => ({
+          ...team,
+          score: teamScores[team.id] || 0,
+          member_count: teamMemberCounts[team.id] || 0
+        })).sort((a, b) => b.score - a.score);
+        
+        setTeams(aggregatedTeams);
+      }
     };
     fetchData();
 

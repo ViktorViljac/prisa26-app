@@ -26,7 +26,7 @@ import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminLevels from './pages/admin/AdminLevels';
 
-const SCREEN_TITLES = ['Početna', 'Navike', 'Arena', 'Rang lista', 'Izazovi', 'Profil'];
+const SCREEN_TITLES = ['Početna', 'Navike', 'Arena', 'Liderbord', 'Izazovi', 'Profil'];
 
 function AppShell() {
   const { signOut, loading, user } = useAuth();

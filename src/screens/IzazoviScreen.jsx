@@ -57,6 +57,15 @@ const VERIFY_LABELS = {
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `Kreće: ${day}.${month}.`;
+}
+
 export default function IzazoviScreen() {
   const { profile, refreshProfile } = useAuth();
   const [categories, setCategories] = useState([]);
@@ -378,6 +387,20 @@ export default function IzazoviScreen() {
                     </span>
                   </div>
                   <div className="challenge-desc">{challenge.description}</div>
+                  {challenge.start_date && (
+                    <div style={{
+                      marginTop: 8,
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      color: 'var(--prisa-blue)',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      display: 'inline-block'
+                    }}>
+                      ⏳ {formatDate(challenge.start_date)}
+                    </div>
+                  )}
                 </div>
               </div>
             );

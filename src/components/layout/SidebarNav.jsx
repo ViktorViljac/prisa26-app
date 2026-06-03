@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { label: 'Početna', icon: HomeIcon, index: 0 },
   { label: 'Navike', icon: EmojiEventsIcon, index: 1 },
   { label: 'Arena', icon: SportsKabaddiIcon, index: 2, isArena: true },
-  { label: 'Rang', icon: LeaderboardIcon, index: 3 },
+  { label: 'Liderbord', icon: LeaderboardIcon, index: 3 },
   { label: 'Izazovi', icon: MilitaryTechIcon, index: 4 },
   { label: 'Profil', icon: PersonIcon, index: 5 },
 ];
@@ -28,8 +28,17 @@ export default function SidebarNav({ navValue, setNavValue, onLogout, onAdmin, a
   return (
     <aside className="sidebar">
       {/* Brand */}
-      <div className="sidebar-brand" style={{ justifyContent: 'center', padding: '16px 24px' }}>
-        <img src="/logo-horizontalni.png" alt="PRIŠA" style={{ maxHeight: 38, maxWidth: '100%', objectFit: 'contain' }} />
+      <div className="sidebar-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '16px 24px' }}>
+        <img src="/logo-horizontalni.png" alt="PRIŠA" style={{ maxHeight: 38, maxWidth: '80%', objectFit: 'contain' }} />
+        <sup style={{
+          fontFamily: 'var(--font-hand)',
+          fontSize: '1rem',
+          fontWeight: 800,
+          color: 'var(--prisa-orange)',
+          transform: 'rotate(-8deg) translateY(-2px)',
+          display: 'inline-block',
+          marginLeft: 2
+        }}>2026</sup>
       </div>
 
       {/* User card */}

@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { label: 'Početna', icon: HomeIcon, index: 0 },
   { label: 'Navike', icon: EmojiEventsIcon, index: 1 },
   { label: 'Arena', icon: SportsKabaddiIcon, index: 2, isArena: true },
-  { label: 'Rang', icon: LeaderboardIcon, index: 3 },
+  { label: 'Liderbord', icon: LeaderboardIcon, index: 3 },
   { label: 'Izazovi', icon: MilitaryTechIcon, index: 4 },
 ];
 

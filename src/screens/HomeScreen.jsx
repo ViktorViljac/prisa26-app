@@ -12,6 +12,19 @@ import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
+const DEFAULT_LEVELS = [
+  { level: 1, name: 'Početnik', icon: '🐣', xp: 0 },
+  { level: 2, name: 'Tragač', icon: '🔍', xp: 500 },
+  { level: 3, name: 'Učenik', icon: '📚', xp: 1000 },
+  { level: 4, name: 'Navigator', icon: '🧭', xp: 1500 },
+  { level: 5, name: 'Strijelac', icon: '🏹', xp: 2000 },
+  { level: 6, name: 'Ratnik', icon: '⚔️', xp: 2500 },
+  { level: 7, name: 'Majstor', icon: '🎓', xp: 3000 },
+  { level: 8, name: 'Prvak', icon: '🏆', xp: 3500 },
+  { level: 9, name: 'Legenda', icon: '👑', xp: 4000 },
+  { level: 10, name: 'Besmrtnik', icon: '🌌', xp: 4500 }
+];
+
 function getGreetingData() {
   const h = new Date().getHours();
   
@@ -49,8 +62,9 @@ export default function HomeScreen({ onNavigate }) {
   const [countdown, setCountdown] = useState('');
   const [dailyQuote, setDailyQuote] = useState(null);
   const [levelInfo, setLevelInfo] = useState({ name: 'Početnik', icon: '🐣' });
-  const [actionsCount, setActionsCount] = useState(0);
+  const [achievementsRatio, setAchievementsRatio] = useState({ unlocked: 0, total: 0 });
   const [arenaEnabled, setArenaEnabled] = useState(false);
+  const [showLevelProgression, setShowLevelProgression] = useState(false);
 
   const totalXp = profile?.xp || 0;
   const level = Math.floor(totalXp / 500) + 1;
@@ -133,14 +147,23 @@ export default function HomeScreen({ onNavigate }) {
         else setLevelInfo({ name: `Razina ${level}`, icon: '⭐' });
       }
 
-      // 3. Fetch actions count (number of logged challenge entries)
+      // 3. Fetch achievements ratio (unlocked / total)
       if (profile) {
-        const { count } = await supabase
-          .from('user_challenges')
-          .select('id', { count: 'exact' })
-          .eq('user_id', profile.id);
+        // Fetch total achievements (where visibility is not 'hidden')
+        const { data: totalAch } = await supabase
+          .from('achievements')
+          .select('id')
+          .neq('visibility', 'hidden');
         
-        if (count !== null) setActionsCount(count);
+        // Fetch user's unlocked achievements
+        const { data: userAch } = await supabase
+          .from('user_achievements')
+          .select('achievement_id')
+          .eq('user_id', profile.id);
+
+        const totalCount = totalAch ? totalAch.length : 0;
+        const unlockedCount = userAch ? userAch.length : 0;
+        setAchievementsRatio({ unlocked: unlockedCount, total: totalCount });
       }
 
       // 4. Fetch Arena Enabled setting
@@ -161,8 +184,8 @@ export default function HomeScreen({ onNavigate }) {
 
   const stats = [
     { icon: <LocalFireDepartmentIcon />, value: `${profile?.streak || 0} 🔥`, label: 'Vatrice', bg: '#fff0eb', color: '#f07147' },
-    { icon: <span>{levelInfo.icon}</span>, value: levelInfo.name, label: `Razina ${level}`, bg: '#dbeafe', color: '#3b82f6' },
-    { icon: <EmojiEventsIcon />, value: actionsCount, label: 'Akcije', bg: '#ccfbf1', color: '#0d9488' },
+    { icon: <span>{levelInfo.icon}</span>, value: levelInfo.name, label: `Razina ${level}`, bg: '#dbeafe', color: '#3b82f6', isLevel: true },
+    { icon: <EmojiEventsIcon />, value: `${achievementsRatio.unlocked} / ${achievementsRatio.total}`, label: 'Izazovi', bg: '#ccfbf1', color: '#0d9488' },
     { icon: <BoltIcon />, value: `${profile?.xp || 0} ⚡`, label: 'Ukupno XP', bg: '#ffedd5', color: '#f07147' },
   ];
 
@@ -174,28 +197,6 @@ export default function HomeScreen({ onNavigate }) {
         <div className="hero-greeting">{greeting.g}, {profile?.name?.split(' ')[0] || 'Korisnik'} 👋</div>
         <div className="hero-welcome">{greeting.s}</div>
 
-        {/* Daily quote lifted to the top */}
-        {dailyQuote && (
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: 'var(--radius-md)',
-            padding: '12px 16px',
-            margin: '14px 0',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            color: '#fff'
-          }}>
-            <div style={{ fontStyle: 'italic', fontSize: '0.82rem', lineHeight: 1.4, fontWeight: 500 }}>
-              "{dailyQuote.text}"
-            </div>
-            {dailyQuote.author && (
-              <div style={{ fontSize: '0.72rem', textAlign: 'right', marginTop: 4, opacity: 0.8, fontWeight: 700 }}>
-                — {dailyQuote.author}
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="xp-section">
           <XpRing
             level={level}
@@ -204,7 +205,40 @@ export default function HomeScreen({ onNavigate }) {
             animatedXp={animatedXp}
           />
           <div className="xp-info">
-            <h3>{animatedXp} XP</h3>
+            {/* Level badge next to XP ring */}
+            <div 
+              onClick={() => setShowLevelProgression(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(5px)',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                border: '1.5px solid rgba(255, 255, 255, 0.4)',
+                cursor: 'pointer',
+                marginBottom: '8px',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+              }}
+              title="Vidi razine i napredak"
+            >
+              <span style={{ fontSize: '1.2rem' }}>{levelInfo.icon}</span>
+              <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>
+                {levelInfo.name}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', marginLeft: '2px' }}>ℹ️</span>
+            </div>
+
+            <h3 style={{ marginTop: '2px' }}>{animatedXp} XP</h3>
             <p>{xpIntoLevel} / {xpForNext} do razine {level + 1}</p>
             <div className="xp-progress-bar">
               <div
@@ -226,17 +260,65 @@ export default function HomeScreen({ onNavigate }) {
       {/* Stats grid */}
       <div className="stats-grid">
         {stats.map((s, i) => (
-          <div key={i} className="stat-tile">
+          <div 
+            key={i} 
+            className="stat-tile"
+            onClick={s.isLevel ? () => setShowLevelProgression(true) : undefined}
+            style={s.isLevel ? { 
+              cursor: 'pointer', 
+              border: '1.5px solid var(--prisa-orange)', 
+              boxShadow: '0 4px 12px rgba(240, 113, 71, 0.12)',
+              transition: 'transform 0.2s var(--ease)'
+            } : {}}
+            onMouseEnter={(e) => {
+              if (s.isLevel) e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              if (s.isLevel) e.currentTarget.style.transform = 'none';
+            }}
+          >
             <div className="stat-tile-icon" style={{ background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {s.icon}
             </div>
             <div>
-              <div className="stat-tile-value" style={{ fontSize: '0.9rem', fontWeight: 800 }}>{s.value}</div>
+              <div className="stat-tile-value" style={{ fontSize: '1.2rem', fontWeight: 800 }}>{s.value}</div>
               <div className="stat-tile-label">{s.label}</div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Daily quote block - moved to bottom above CTAs */}
+      {dailyQuote && (
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: 'var(--radius-md)',
+          padding: '16px 20px',
+          margin: '20px 0',
+          border: '1.5px solid var(--border-color)',
+          boxShadow: 'var(--shadow-sm)',
+          color: 'var(--text-dark)',
+          position: 'relative'
+        }}>
+          {/* Notebook paper style detail */}
+          <div style={{
+            position: 'absolute',
+            left: '4px',
+            top: '0',
+            bottom: '0',
+            width: '2px',
+            borderLeft: '1px dashed #ffb3a7',
+          }} />
+          <div style={{ fontStyle: 'italic', fontSize: '0.92rem', lineHeight: 1.5, fontWeight: 500, paddingLeft: '8px' }}>
+            "{dailyQuote.text}"
+          </div>
+          {dailyQuote.author && (
+            <div style={{ fontSize: '0.78rem', textAlign: 'right', marginTop: 6, opacity: 0.8, fontWeight: 700, color: 'var(--prisa-orange)' }}>
+              — {dailyQuote.author}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* CTA cards */}
       <div
@@ -268,6 +350,170 @@ export default function HomeScreen({ onNavigate }) {
           <ArrowForwardIcon className="cta-card-arrow" />
         </div>
       )}
+
+      {/* Level Progression road modal (Clash Royale Style) */}
+      {showLevelProgression && (
+        <div className="dialog-overlay" onClick={() => setShowLevelProgression(false)}>
+          <div 
+            className="dialog-card" 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              padding: '24px',
+              maxWidth: '420px',
+              background: '#fcfaf7', /* notebook paper warm color */
+              border: '2px solid var(--border-color)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-md)',
+              position: 'relative',
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-dark)', margin: 0 }}>
+                Put Razine ⚔️
+              </h2>
+              <button 
+                onClick={() => setShowLevelProgression(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.8rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  lineHeight: 1
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Subtitle */}
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-gray)', marginBottom: '18px', lineHeight: 1.4 }}>
+              Skupljaj XP bodove i napreduj kroz razine. Svaka nova razina donosi novu titulu i status u zajednici!
+            </p>
+
+            {/* Scrollable road */}
+            <div 
+              style={{ 
+                flex: 1,
+                overflowY: 'auto', 
+                position: 'relative', 
+                padding: '20px',
+                borderRadius: 'var(--radius-md)',
+                background: '#fff',
+                border: '1.5px solid var(--border-color)'
+              }}
+            >
+              {/* Vertical path line */}
+              <div style={{
+                position: 'absolute',
+                left: '42px',
+                top: '20px',
+                bottom: '20px',
+                width: '4px',
+                background: 'linear-gradient(to bottom, #3b82f6, #10b981, #f59e0b, #ef4444)',
+                borderRadius: '2px',
+                zIndex: 1
+              }} />
+
+              {/* Levels mapping */}
+              {DEFAULT_LEVELS.map((item) => {
+                const isActive = item.level === level;
+                const isUnlocked = item.level < level;
+                const isLocked = item.level > level;
+                
+                return (
+                  <div 
+                    key={item.level} 
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      marginBottom: '20px',
+                      position: 'relative',
+                      zIndex: 2
+                    }}
+                  >
+                    {/* Circle badge */}
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: isActive 
+                        ? 'var(--prisa-orange)' 
+                        : isUnlocked 
+                          ? '#10b981' 
+                          : '#e2e8f0',
+                      border: isActive 
+                        ? '4px solid #fff' 
+                        : '2px solid var(--border-color)',
+                      boxShadow: isActive ? '0 0 10px rgba(240, 113, 71, 0.6)' : 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.3rem',
+                      fontWeight: 'bold',
+                      color: isActive || isUnlocked ? '#fff' : 'var(--text-muted)',
+                      flexShrink: 0,
+                      marginRight: '20px'
+                    }}>
+                      {isActive ? item.icon : isUnlocked ? '✓' : item.icon}
+                    </div>
+
+                    {/* Level Details */}
+                    <div style={{ flexGrow: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ 
+                          fontFamily: 'var(--font-heading)', 
+                          fontWeight: 800, 
+                          fontSize: '1rem',
+                          color: isActive ? 'var(--prisa-orange)' : 'var(--text-dark)'
+                        }}>
+                          {item.name}
+                        </span>
+                        {isActive && (
+                          <span style={{ 
+                            background: 'var(--prisa-orange-light)', 
+                            color: 'var(--prisa-orange)', 
+                            fontSize: '0.62rem', 
+                            fontWeight: 800, 
+                            padding: '2px 8px', 
+                            borderRadius: '10px',
+                            textTransform: 'uppercase'
+                          }}>
+                            Tvoja
+                          </span>
+                        )}
+                        {isLocked && (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>🔒</span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        <span>Razina {item.level}</span>
+                        <span>{item.xp} XP</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+              <button 
+                className="btn-primary"
+                onClick={() => setShowLevelProgression(false)}
+                style={{ width: '100%' }}
+              >
+                Zatvori
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

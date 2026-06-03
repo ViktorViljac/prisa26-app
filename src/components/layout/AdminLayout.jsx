@@ -29,9 +29,19 @@ export default function AdminLayout() {
     <div className="admin-layout">
       {/* Sidebar */}
       <aside className="admin-sidebar">
-        <div className="admin-sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 24px' }}>
-          <img src="/logo-horizontalni.png" alt="PRIŠA" style={{ maxHeight: 28, maxWidth: '70%', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
-          <span className="admin-badge">ADMIN</span>
+        <div className="admin-sidebar-brand" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '20px 24px' }}>
+          <img src="/logo-horizontalni.png" alt="PRIŠA" style={{ maxHeight: 28, maxWidth: '60%', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+          <sup style={{
+            fontFamily: 'var(--font-hand)',
+            fontSize: '0.85rem',
+            fontWeight: 800,
+            color: '#fff',
+            transform: 'rotate(-8deg) translateY(-2px)',
+            display: 'inline-block',
+            filter: 'none',
+            marginLeft: 2
+          }}>2026</sup>
+          <span className="admin-badge" style={{ marginLeft: 'auto' }}>ADMIN</span>
         </div>
 
         <nav className="admin-nav">

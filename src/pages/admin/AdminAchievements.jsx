@@ -14,7 +14,18 @@ const INITIAL_FORM = {
   unlock_code: '',
   condition_type: 'code',
   sort_order: 0,
+  visibility: 'visible',
+  start_date: '',
 };
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${day}.${month}.`;
+}
 
 export default function AdminAchievements() {
   const [achievements, setAchievements] = useState([]);
@@ -137,6 +148,8 @@ export default function AdminAchievements() {
         xp_reward: parseInt(form.xp_reward) || 0,
         sort_order: parseInt(form.sort_order) || 0,
         unlock_code: form.unlock_code ? form.unlock_code.toUpperCase().trim() : null,
+        visibility: form.visibility || 'visible',
+        start_date: form.start_date || null,
       };
 
       if (editingId) {
@@ -170,6 +183,8 @@ export default function AdminAchievements() {
       unlock_code: ach.unlock_code || '',
       condition_type: ach.condition_type || 'code',
       sort_order: ach.sort_order || 0,
+      visibility: ach.visibility || 'visible',
+      start_date: ach.start_date || '',
     });
     setEditingId(ach.id);
     setShowForm(true);
@@ -326,6 +341,48 @@ export default function AdminAchievements() {
               </div>
             </div>
 
+            <div className="admin-form-row">
+              <div className="form-group">
+                <label>Vidljivost</label>
+                <select
+                  name="visibility"
+                  value={form.visibility}
+                  onChange={handleInputChange}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg-paper)',
+                    border: '1.5px solid #e2e8f0',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '10px 14px',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  <option value="visible">Vidljivo (Normalno)</option>
+                  <option value="coming_soon">Coming Soon (Uskoro)</option>
+                  <option value="mystery">Mystery (Tajna)</option>
+                  <option value="hidden">Skriveno</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Datum Početka (samo za Coming Soon)</label>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={form.start_date}
+                  onChange={handleInputChange}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg-paper)',
+                    border: '1.5px solid #e2e8f0',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '10px 14px',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                />
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
               <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px' }}>
                 {editingId ? 'Spremi Izmjene' : 'Stvori Postignuće'}
@@ -356,6 +413,7 @@ export default function AdminAchievements() {
               <th>XP Nagrada</th>
               <th>Tip Uvjeta</th>
               <th>Zajednički Kod</th>
+              <th>Vidljivost</th>
               <th>Sort</th>
               <th style={{ width: 220 }}>Akcije</th>
             </tr>
@@ -378,6 +436,34 @@ export default function AdminAchievements() {
                 </td>
                 <td style={{ fontFamily: 'monospace', fontWeight: 700, letterSpacing: 0.5 }}>
                   {a.unlock_code ? a.unlock_code : a.condition_type === 'code' ? 'Jednokratni kodovi 🎫' : '—'}
+                </td>
+                <td>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    fontWeight: 700,
+                    color: a.visibility === 'visible' 
+                      ? 'var(--prisa-teal)' 
+                      : a.visibility === 'coming_soon' 
+                        ? 'var(--prisa-blue)' 
+                        : a.visibility === 'mystery' 
+                          ? '#f59e0b' 
+                          : 'var(--text-muted)',
+                    background: a.visibility === 'visible'
+                      ? 'var(--prisa-teal-light)'
+                      : a.visibility === 'coming_soon'
+                        ? 'var(--prisa-blue-light)'
+                        : a.visibility === 'mystery'
+                          ? '#fef3c7'
+                          : '#f1f5f9',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    display: 'inline-block'
+                  }}>
+                    {a.visibility === 'visible' && 'Vidljivo'}
+                    {a.visibility === 'coming_soon' && `Uskoro (${a.start_date ? formatDate(a.start_date) : '—'})`}
+                    {a.visibility === 'mystery' && 'Tajna'}
+                    {a.visibility === 'hidden' && 'Skriveno'}
+                  </span>
                 </td>
                 <td>{a.sort_order}</td>
                 <td>

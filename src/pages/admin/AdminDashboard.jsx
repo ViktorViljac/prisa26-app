@@ -15,6 +15,7 @@ export default function AdminDashboard() {
     pendingApprovals: 0,
   });
   const [pendingQueue, setPendingQueue] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState(null);
   const [arenaEnabled, setArenaEnabled] = useState(false);
@@ -67,6 +68,22 @@ export default function AdminDashboard() {
       
       if (arenaSetting && arenaSetting.value) {
         setArenaEnabled(arenaSetting.value.enabled === true || arenaSetting.value === true);
+      }
+
+      // 4. Fetch feedbacks
+      const { data: fbData, error: fbErr } = await supabase
+        .from('feedbacks')
+        .select(`
+          id,
+          text,
+          rating,
+          created_at,
+          profiles (name, email)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (!fbErr && fbData) {
+        setFeedbacks(fbData);
       }
     } catch (err) {
       console.error('Error fetching admin dashboard data:', err);
@@ -344,6 +361,61 @@ export default function AdminDashboard() {
                       </>
                     )}
                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Feedback panel section */}
+      <div style={{ marginTop: 40, marginBottom: 40 }}>
+        <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, marginBottom: 20 }}>
+          💬 Povratne informacije korisnika ({feedbacks.length})
+        </h2>
+
+        {feedbacks.length === 0 ? (
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid rgba(0,0,0,0.06)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 40,
+            textAlign: 'center',
+            color: 'var(--text-muted)'
+          }}>
+            Još nema zaprimljenih povratnih informacija.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {feedbacks.map((fb) => (
+              <div
+                key={fb.id}
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: 16,
+                  boxShadow: 'var(--shadow-sm)'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <div>
+                    <span style={{ fontWeight: 800, color: 'var(--text-dark)' }}>
+                      {fb.profiles?.name || 'Korisnik'}
+                    </span>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-gray)', marginLeft: 8 }}>
+                      ({fb.profiles?.email || 'Nema e-maila'})
+                    </span>
+                  </div>
+                  <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                    {Array(fb.rating).fill('⭐').join('')}
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-dark)', margin: '0 0 8px 0', lineHeight: 1.4 }}>
+                  "{fb.text}"
+                </p>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                  Poslano: {new Date(fb.created_at).toLocaleString('hr-HR')}
                 </div>
               </div>
             ))}

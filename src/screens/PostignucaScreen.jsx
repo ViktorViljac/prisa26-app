@@ -6,6 +6,15 @@ import LockIcon from '@mui/icons-material/Lock';
 import StarsIcon from '@mui/icons-material/Stars';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `Kreće: ${day}.${month}.`;
+}
+
 export default function PostignucaScreen() {
   const { profile, refreshProfile } = useAuth();
   const [achievements, setAchievements] = useState([]);
@@ -151,27 +160,30 @@ export default function PostignucaScreen() {
     }
   };
 
-  const unlockedList = achievements.filter(ach => isUnlocked(ach.id));
-  const lockedList = achievements.filter(ach => !isUnlocked(ach.id));
+  // Filter out hidden achievements unless the user has unlocked them
+  const visibleAchievements = achievements.filter(ach => isUnlocked(ach.id) || ach.visibility !== 'hidden');
+  
+  const unlockedList = visibleAchievements.filter(ach => isUnlocked(ach.id));
+  const lockedList = visibleAchievements.filter(ach => !isUnlocked(ach.id));
 
   return (
     <div>
       {/* Header */}
       <div className="achievements-header">
         <div className="achievements-count">
-          <span>{unlockedCount}</span> / {achievements.length} izazova
+          <span>{unlockedCount}</span> / {visibleAchievements.length} izazova
         </div>
       </div>
 
       {/* Unlock code */}
       <div className="unlock-code-section">
-        <div className="unlock-code-title">🔑 Aktiviraj kod izazova</div>
+        <div className="unlock-code-title">🔑 Unesi kod</div>
         <div className="unlock-code-row">
           <input
             type="text"
             value={unlockCode}
             onChange={e => setUnlockCode(e.target.value)}
-            placeholder="UNESI JEDNOKRATNI ILI GLOBALNI KOD"
+            placeholder="UNESI KOD"
             maxLength={30}
             style={{ textTransform: 'uppercase' }}
           />
@@ -243,21 +255,72 @@ export default function PostignucaScreen() {
         </div>
       ) : (
         <div className="achievements-grid">
-          {lockedList.map(ach => (
-            <div key={ach.id} className="achievement-card locked" style={{ filter: 'grayscale(1)', opacity: 0.55 }}>
-              <div className="achievement-icon">{ach.icon || '🏅'}</div>
-              <div className="achievement-title">{ach.title}</div>
-              <div className="achievement-desc">{ach.description}</div>
-              {ach.xp_reward > 0 && (
-                <div className="challenge-xp-badge" style={{ marginTop: 8 }}>
-                  ⚡ {ach.xp_reward} XP
+          {lockedList.map(ach => {
+            const isMystery = ach.visibility === 'mystery';
+            const isComingSoon = ach.visibility === 'coming_soon';
+
+            return (
+              <div 
+                key={ach.id} 
+                className={`achievement-card locked ${isComingSoon ? 'coming-soon' : ''}`}
+                style={{ 
+                  filter: 'grayscale(1)', 
+                  opacity: 0.65,
+                  position: 'relative',
+                  border: isComingSoon ? '1.5px dashed var(--prisa-orange)' : undefined,
+                  background: isComingSoon ? '#fffbeb' : undefined
+                }}
+              >
+                <div className="achievement-icon">{isMystery ? '❓' : (ach.icon || '🏅')}</div>
+                <div className="achievement-title">{isMystery ? '???' : ach.title}</div>
+                <div className="achievement-desc">
+                  {isMystery 
+                    ? 'Ovaj izazov je tajna dok ga ne otključaš!' 
+                    : ach.description}
                 </div>
-              )}
-              <div className="achievement-lock-overlay">
-                <LockIcon className="achievement-lock-icon" />
+
+                {isComingSoon && ach.start_date && (
+                  <div style={{ 
+                    marginTop: 8, 
+                    fontSize: '0.8rem', 
+                    fontWeight: 700, 
+                    color: '#d97706',
+                    background: '#fef3c7',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    display: 'inline-block'
+                  }}>
+                    ⏳ {formatDate(ach.start_date)}
+                  </div>
+                )}
+
+                {!isComingSoon && ach.xp_reward > 0 && (
+                  <div className="challenge-xp-badge" style={{ marginTop: 8 }}>
+                    ⚡ {isMystery ? '?' : ach.xp_reward} XP
+                  </div>
+                )}
+
+                <div className="achievement-lock-overlay">
+                  {isComingSoon ? (
+                    <span style={{ 
+                      fontSize: '0.85rem', 
+                      fontWeight: 800, 
+                      color: '#d97706',
+                      background: '#fff',
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      border: '1px solid #f59e0b',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                    }}>
+                      Uskoro
+                    </span>
+                  ) : (
+                    <LockIcon className="achievement-lock-icon" />
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
