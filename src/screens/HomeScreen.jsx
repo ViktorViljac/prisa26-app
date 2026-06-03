@@ -235,7 +235,7 @@ export default function HomeScreen({ onNavigate }) {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.background = '#f8fafc';
               }}
-              title="Vidi razine i napredak"
+              title="Vidi Put Ratnika"
             >
               <div style={{ fontSize: '1.6rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }}>{levelInfo.icon}</div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -243,7 +243,7 @@ export default function HomeScreen({ onNavigate }) {
                   {levelInfo.name}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)', fontWeight: 600 }}>
-                  Pogledaj put razina
+                  Pogledaj Put Ratnika
                 </span>
               </div>
             </div>
@@ -303,27 +303,59 @@ export default function HomeScreen({ onNavigate }) {
         <div style={{
           background: 'rgba(255, 255, 255, 0.95)',
           borderRadius: 'var(--radius-md)',
-          padding: '16px 20px',
-          margin: '20px 0',
+          padding: '20px 24px',
+          margin: '24px 0',
           border: '1.5px solid var(--border-color)',
           boxShadow: 'var(--shadow-sm)',
           color: 'var(--text-dark)',
-          position: 'relative'
+          position: 'relative',
+          overflow: 'hidden'
         }}>
           {/* Notebook paper style detail */}
           <div style={{
             position: 'absolute',
-            left: '4px',
+            left: '5px',
             top: '0',
             bottom: '0',
             width: '2px',
-            borderLeft: '1px dashed #ffb3a7',
+            borderLeft: '1.5px dashed #ffa090',
           }} />
-          <div style={{ fontStyle: 'italic', fontSize: '1.05rem', lineHeight: 1.5, fontWeight: 500, paddingLeft: '8px' }}>
-            "{dailyQuote.text}"
+
+          {/* Large Quote Watermark */}
+          <span style={{
+            position: 'absolute',
+            right: '12px',
+            top: '-10px',
+            fontSize: '6rem',
+            fontFamily: 'Georgia, serif',
+            color: 'rgba(240, 113, 71, 0.07)',
+            lineHeight: 1,
+            pointerEvents: 'none',
+            userSelect: 'none'
+          }}>
+            ”
+          </span>
+
+          <div style={{ 
+            fontFamily: 'var(--font-hand)', 
+            fontSize: '1.5rem', 
+            lineHeight: 1.35, 
+            fontWeight: 600, 
+            paddingLeft: '12px',
+            color: '#1e293b'
+          }}>
+            “{dailyQuote.text}”
           </div>
           {dailyQuote.author && (
-            <div style={{ fontSize: '0.85rem', textAlign: 'right', marginTop: 6, opacity: 0.8, fontWeight: 700, color: 'var(--prisa-orange)' }}>
+            <div style={{ 
+              fontSize: '0.85rem', 
+              textAlign: 'right', 
+              marginTop: 8, 
+              opacity: 0.9, 
+              fontWeight: 800, 
+              color: 'var(--prisa-orange)',
+              fontFamily: 'var(--font-body)'
+            }}>
               — {dailyQuote.author}
             </div>
           )}
@@ -383,7 +415,7 @@ export default function HomeScreen({ onNavigate }) {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-dark)', margin: 0 }}>
-                Put Razine ⚔️
+                Put Ratnika ⚔️
               </h2>
               <button 
                 onClick={() => setShowLevelProgression(false)}
