@@ -117,7 +117,18 @@ export default function LeaderboardScreen() {
               </div>
               <div className="rank-info">
                 <div className="rank-name">{user.name}{isMe && ' (ti)'}</div>
-                <div className="rank-team">{user.teams?.name || 'Bez tima'}</div>
+              </div>
+              <div className="rank-team-col">
+                <div 
+                  className="rank-team-badge"
+                  style={{
+                    color: user.teams?.color || 'var(--text-muted)',
+                    backgroundColor: user.teams ? `${user.teams.color}15` : 'rgba(0,0,0,0.04)',
+                    border: `1px solid ${user.teams ? `${user.teams.color}30` : 'rgba(0,0,0,0.08)'}`
+                  }}
+                >
+                  {user.teams ? `${user.teams.icon || '🏳️'} ${user.teams.name}` : 'Bez tima'}
+                </div>
               </div>
               <div className="rank-points">{user.xp} XP</div>
             </div>

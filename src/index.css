@@ -2119,9 +2119,31 @@ body {
   font-weight: 700;
   color: var(--text-dark);
 }
-.rank-team {
+.rank-team-col {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+.rank-team-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 99px;
   font-size: 0.72rem;
-  color: var(--text-gray);
+  font-weight: 800;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .rank-team-col {
+    margin-right: 4px;
+  }
+  .rank-team-badge {
+    padding: 3px 6px;
+    font-size: 0.68rem;
+  }
 }
 .rank-points {
   font-family: var(--font-heading);
