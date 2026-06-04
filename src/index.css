@@ -366,6 +366,92 @@ body {
 }
 
 /* ==========================================================================
+   Drawer (slide-in panel from right)
+   ========================================================================== */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 300;
+  animation: fade-in 0.25s ease;
+}
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 420px;
+  background: #fcfaf7;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.15);
+  z-index: 301;
+  display: flex;
+  flex-direction: column;
+  animation: drawer-slide-in 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  overflow: hidden; /* prevents scrollbar from bleeding past edges */
+}
+@keyframes drawer-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.drawer-panel.drawer-closing {
+  animation: drawer-slide-out 0.25s ease forwards;
+}
+@keyframes drawer-slide-out {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
+/* Drawer header (sticky) */
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1.5px solid var(--border-color, rgba(0,0,0,0.08));
+  background: #fcfaf7;
+  flex-shrink: 0;
+}
+.drawer-header h2 {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin: 0;
+}
+.drawer-close-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color, rgba(0,0,0,0.08));
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+.drawer-close-btn:hover {
+  background: var(--prisa-orange-light);
+  color: var(--prisa-orange);
+}
+
+/* Drawer body (scrollable) */
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 24px 32px;
+  -webkit-overflow-scrolling: touch;
+}
+/* Hide scrollbar for cleaner look, but keep scroll functionality */
+.drawer-body::-webkit-scrollbar { width: 4px; }
+.drawer-body::-webkit-scrollbar-track { background: transparent; }
+.drawer-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 99px; }
+
+/* ==========================================================================
    LOGIN PAGE
    ========================================================================== */
 .login-page {

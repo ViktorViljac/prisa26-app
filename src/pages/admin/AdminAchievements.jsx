@@ -90,13 +90,16 @@ export default function AdminAchievements() {
   const handleGenerateCodes = async (count = 1) => {
     if (!selectedAchievementForCodes) return;
     
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I to avoid confusion
     const newCodes = [];
     for (let i = 0; i < count; i++) {
-      const codePart1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const codePart2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+      let code = '';
+      for (let j = 0; j < 6; j++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
       newCodes.push({
         achievement_id: selectedAchievementForCodes.id,
-        code: `PRISA-${codePart1}-${codePart2}`,
+        code,
         is_used: false,
       });
     }

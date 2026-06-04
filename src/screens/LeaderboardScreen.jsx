@@ -76,8 +76,6 @@ export default function LeaderboardScreen() {
     ? ['🥈', '🥇', '🥉']
     : MEDALS.slice(0, top3.length);
 
-  const rest = leaderboard.slice(3);
-
   return (
     <div className="fade-in-content">
       {/* Podium */}
@@ -100,18 +98,20 @@ export default function LeaderboardScreen() {
         </div>
       )}
 
-      {/* Rank list */}
+      {/* Rank list — includes everyone (also top 3) */}
       <div className="rank-list">
         <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, margin: '24px 0 16px 0', color: 'var(--text-dark)' }}>
           👥 Ukupni poredak
         </h3>
-        {rest.map((user, i) => {
-          const rank = i + 4;
+        {leaderboard.map((user, i) => {
+          const rank = i + 1;
           const isMe = user.id === profile?.id;
           const avatarLetter = user.name?.charAt(0)?.toUpperCase() || '?';
           return (
             <div key={user.id} className={`rank-card hover-scale ${isMe ? 'me' : ''}`}>
-              <div className="rank-number">{rank}.</div>
+              <div className="rank-number" style={rank <= 3 ? { color: 'var(--prisa-orange)', fontWeight: 900 } : {}}>
+                {rank <= 3 ? MEDALS[rank - 1] : `${rank}.`}
+              </div>
               <div className="rank-avatar">
                 {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
               </div>
