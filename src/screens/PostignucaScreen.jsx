@@ -374,62 +374,97 @@ export default function PostignucaScreen() {
         </div>
       )}
 
-      {/* Detail Modal */}
+      {/* Redesigned Premium Detail Modal */}
       {selectedAchievement && (
-        <div className="dialog-overlay" onClick={() => setSelectedAchievement(null)}>
-          <div className="dialog-card slide-up-modal" onClick={e => e.stopPropagation()} style={{ padding: '24px', maxWidth: '400px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div className="achievement-icon" style={{ fontSize: '3rem', background: 'rgba(0,0,0,0.03)', padding: '12px', borderRadius: '50%', flexShrink: 0 }}>
-                {selectedAchievement.isMystery ? '❓' : (selectedAchievement.icon || '🏅')}
-              </div>
+        <div className="achievement-dialog-overlay" onClick={() => setSelectedAchievement(null)}>
+          <div className="achievement-dialog-card" onClick={e => e.stopPropagation()}>
+            {/* Gradient Header based on state */}
+            <div className={`achievement-dialog-header ${
+              selectedAchievement.isUnlocked ? 'unlocked' :
+              selectedAchievement.isComingSoon ? 'coming_soon' :
+              selectedAchievement.isMystery ? 'mystery' : 'locked'
+            }`}>
               <button 
+                className="achievement-dialog-close-btn"
                 onClick={() => setSelectedAchievement(null)}
-                style={{ background: 'none', border: 'none', fontSize: '1.8rem', cursor: 'pointer', color: 'var(--text-muted)' }}
               >
                 ×
               </button>
-            </div>
-            
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-dark)' }}>
-              {selectedAchievement.isMystery ? 'Tajna' : selectedAchievement.title}
-            </h2>
-            
-            <p style={{ fontSize: '0.95rem', color: 'var(--text-gray)', lineHeight: 1.5, marginBottom: '20px' }}>
-              {selectedAchievement.isMystery 
-                ? 'Ovaj izazov je tajna dok ga ne otključaš!' 
-                : selectedAchievement.description}
-            </p>
 
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
-              {!selectedAchievement.isComingSoon && selectedAchievement.xp_reward > 0 && (
-                <div className="challenge-xp-badge" style={{ fontSize: '0.9rem', padding: '6px 12px' }}>
-                  ⚡ {selectedAchievement.isMystery ? '?' : selectedAchievement.xp_reward} XP
-                </div>
-              )}
-              {selectedAchievement.isUnlocked && (
-                <div className="challenge-xp-badge" style={{ background: '#ccfbf1', color: '#0d9488', fontSize: '0.9rem', padding: '6px 12px' }}>
-                  ✓ Otključano
-                </div>
-              )}
-            </div>
-
-            {selectedAchievement.link_url && (
-              <a 
-                href={selectedAchievement.link_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="btn btn-outline btn-block"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}
-              >
-                Otvori poveznicu <OpenInNewIcon style={{ fontSize: '18px' }} />
-              </a>
-            )}
-
-            {!selectedAchievement.isUnlocked && !selectedAchievement.isMystery && !selectedAchievement.isComingSoon && (
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', background: 'var(--bg-card)', padding: '12px', borderRadius: 'var(--radius-md)' }}>
-                Za otključavanje, unesi kod u polje na vrhu ekrana! 🔑
+              {/* Floating circular icon wrap */}
+              <div className="achievement-dialog-icon-wrap">
+                {selectedAchievement.isMystery ? '❓' : (selectedAchievement.icon || '🏅')}
               </div>
-            )}
+            </div>
+            
+            <div className="achievement-dialog-body">
+              <h2 className="achievement-dialog-title">
+                {selectedAchievement.isMystery ? 'Tajna' : selectedAchievement.title}
+              </h2>
+              
+              <p className="achievement-dialog-desc">
+                {selectedAchievement.isMystery 
+                  ? 'Ovaj izazov je tajna dok ga ne otključaš!' 
+                  : selectedAchievement.description}
+              </p>
+
+              {/* Badges layout */}
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap', width: '100%', marginBottom: 12 }}>
+                {!selectedAchievement.isComingSoon && selectedAchievement.xp_reward > 0 && (
+                  <div className={`achievement-dialog-xp ${selectedAchievement.isUnlocked ? 'unlocked' : 'locked'}`}>
+                    ⚡ {selectedAchievement.isMystery ? '?' : selectedAchievement.xp_reward} XP
+                  </div>
+                )}
+                {selectedAchievement.isComingSoon && selectedAchievement.xp_reward > 0 && (
+                  <div className="achievement-dialog-xp coming_soon">
+                    ⚡ {selectedAchievement.xp_reward} XP
+                  </div>
+                )}
+                {selectedAchievement.isUnlocked && (
+                  <div className="achievement-dialog-status-badge">
+                    ✓ Otključano
+                  </div>
+                )}
+              </div>
+
+              {/* Actions & Instructions */}
+              <div style={{ width: '100%', marginTop: 8 }}>
+                {selectedAchievement.link_url && (
+                  <a 
+                    href={selectedAchievement.link_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="btn achievement-dialog-action-btn"
+                  >
+                    Otvori poveznicu <OpenInNewIcon style={{ fontSize: '18px' }} />
+                  </a>
+                )}
+
+                {!selectedAchievement.isUnlocked && !selectedAchievement.isMystery && !selectedAchievement.isComingSoon && (
+                  <div style={{ 
+                    fontSize: '0.82rem', 
+                    color: 'var(--text-muted)', 
+                    textAlign: 'center', 
+                    background: 'var(--bg-section-alt)', 
+                    padding: '12px 16px', 
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    lineHeight: 1.4,
+                    marginBottom: 12
+                  }}>
+                    Za otključavanje, unesi kod u polje na vrhu ekrana! 🔑
+                  </div>
+                )}
+
+                <button 
+                  onClick={() => setSelectedAchievement(null)}
+                  className="btn btn-outline btn-block"
+                  style={{ fontWeight: 700 }}
+                >
+                  Zatvori
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

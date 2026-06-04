@@ -11,6 +11,7 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ShieldIcon from '@mui/icons-material/Shield';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export default function ProfileScreen({ onLogout }) {
   const { profile, refreshProfile } = useAuth();
@@ -36,60 +37,59 @@ export default function ProfileScreen({ onLogout }) {
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSuccess, setFeedbackSuccess] = useState('');
 
-  // Drawer state
-  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
-  const [showEditDetails, setShowEditDetails] = useState(false);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  // Navigation sub-page state
+  const [subPage, setSubPage] = useState(null); // null | 'details' | 'feedback' | 'privacy'
 
-  // Swipe-to-close state for drawers
+  // Touch gesture state for swipe-to-go-back
   const touchStartX = useRef(0);
   const touchDeltaX = useRef(0);
-  const drawerRef = useRef(null);
+  const sliderRef = useRef(null);
 
-  // Body scroll lock when any drawer is open
+  // Scroll to top on subPage changes
   useEffect(() => {
-    const isOpen = showEditDetails || showFeedbackModal || showPrivacyPolicy;
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [showEditDetails, showFeedbackModal, showPrivacyPolicy]);
+    window.scrollTo(0, 0);
+    const contentArea = document.querySelector('.content-area');
+    if (contentArea) contentArea.scrollTop = 0;
+    const mobileContent = document.querySelector('.mobile-content');
+    if (mobileContent) mobileContent.scrollTop = 0;
+  }, [subPage]);
 
   const handleTouchStart = useCallback((e) => {
+    if (!subPage) return;
     touchStartX.current = e.touches[0].clientX;
     touchDeltaX.current = 0;
-  }, []);
+  }, [subPage]);
 
   const handleTouchMove = useCallback((e) => {
+    if (!subPage) return;
     const delta = e.touches[0].clientX - touchStartX.current;
     if (delta > 0) {
       touchDeltaX.current = delta;
-      if (drawerRef.current) {
-        drawerRef.current.style.transform = `translateX(${delta}px)`;
-        drawerRef.current.style.transition = 'none';
+      if (sliderRef.current) {
+        sliderRef.current.style.transform = `translateX(calc(-50% + ${delta}px))`;
+        sliderRef.current.style.transition = 'none';
       }
     }
-  }, []);
+  }, [subPage]);
 
-  const handleTouchEnd = useCallback((closeFn) => {
+  const handleTouchEnd = useCallback(() => {
+    if (!subPage) return;
     if (touchDeltaX.current > 100) {
-      // Swiped far enough → close
-      if (drawerRef.current) {
-        drawerRef.current.style.transform = 'translateX(100%)';
-        drawerRef.current.style.transition = 'transform 0.25s ease';
+      // Swiped far enough to the right -> go back to main profile
+      if (sliderRef.current) {
+        sliderRef.current.style.transform = 'translateX(0)';
+        sliderRef.current.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
       }
-      setTimeout(() => closeFn(), 250);
+      setTimeout(() => setSubPage(null), 250);
     } else {
-      // Snap back
-      if (drawerRef.current) {
-        drawerRef.current.style.transform = 'translateX(0)';
-        drawerRef.current.style.transition = 'transform 0.2s ease';
+      // Snap back to sub-page
+      if (sliderRef.current) {
+        sliderRef.current.style.transform = 'translateX(-50%)';
+        sliderRef.current.style.transition = 'transform 0.2s ease';
       }
     }
     touchDeltaX.current = 0;
-  }, []);
+  }, [subPage]);
 
   const level = Math.floor((profile?.xp || 0) / 500) + 1;
   const avatarLetter = profile?.name?.charAt(0)?.toUpperCase() || '?';
@@ -205,8 +205,8 @@ export default function ProfileScreen({ onLogout }) {
       } else {
         setSaveSuccess('✅ Osobni podaci uspješno spremljeni!');
       }
-      // Auto-close modal after showing success
-      setTimeout(() => setShowEditDetails(false), 1500);
+      // Auto-close sub-page after showing success
+      setTimeout(() => setSubPage(null), 1500);
     } catch (err) {
       console.error(err);
       alert('Greška prilikom spremanja podataka.');
@@ -232,8 +232,8 @@ export default function ProfileScreen({ onLogout }) {
       setFeedbackSuccess('Hvala ti na povratnim informacijama! ❤️');
       setFeedbackText('');
       setFeedbackRating(5);
-      // Auto-close modal after showing success
-      setTimeout(() => setShowFeedbackModal(false), 1500);
+      // Auto-close sub-page after showing success
+      setTimeout(() => setSubPage(null), 1500);
     } catch (err) {
       console.error(err);
       alert('Greška prilikom slanja povratnih informacija.');
@@ -318,437 +318,427 @@ export default function ProfileScreen({ onLogout }) {
     { icon: <GroupsIcon />, label: 'Tim', value: profile?.teams?.name || 'Nema tima' },
   ];
 
-  return (
-    <div className="fade-in-content">
-      {/* Hero */}
-      <div className="profile-hero">
-        <div
-          className="profile-avatar-large"
-          onClick={() => fileRef.current?.click()}
-        >
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt={profile?.name} />
-          ) : avatarLetter}
-          <div className="profile-avatar-overlay">
-            <CameraAltIcon />
-          </div>
-          {uploading && (
-            <div className="profile-avatar-overlay" style={{ opacity: 1 }}>
-              <span className="loading-spinner" />
-            </div>
-          )}
+  const renderDetails = () => (
+    <div className="profile-stats-card" style={{ margin: 0, padding: 20 }}>
+      <div className="subpage-header" style={{ padding: '0 0 16px 0', borderRadius: 0, marginBottom: 20 }}>
+        <button className="subpage-back-btn" onClick={() => setSubPage(null)} style={{ padding: '6px 8px', marginLeft: -8 }}>
+          <ArrowBackIcon style={{ fontSize: 18 }} /> Natrag
+        </button>
+        <h2 className="subpage-title">👤 Osobni podaci</h2>
+      </div>
+
+      {!profile?.has_completed_details && (
+        <div style={{
+          background: 'var(--prisa-orange-light)',
+          color: 'var(--prisa-orange)',
+          fontSize: '0.8rem',
+          fontWeight: 800,
+          padding: '10px 14px',
+          borderRadius: 'var(--radius-sm)',
+          marginBottom: 20,
+          border: '1px solid rgba(240, 113, 71, 0.2)',
+          lineHeight: 1.4
+        }}>
+          🎁 Popuni sve obvezne podatke (Dob, Spol, Grad, Škola/Fakultet) za nagradu od +100 XP!
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          onChange={handleAvatarUpload}
-          style={{ display: 'none' }}
-        />
-        <div className="profile-name">{profile?.name || 'Korisnik'}</div>
-        {profile?.teams && (
-          <div
-            className="profile-team-badge"
-            style={{
-              background: `${profile.teams.color}20`,
-              color: profile.teams.color,
-            }}
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Ime</label>
+            <input
+              type="text"
+              value={firstName}
+              onChange={e => setFirstName(e.target.value)}
+              placeholder="npr. Ivan"
+              style={{ width: '100%', marginTop: 4 }}
+            />
+          </div>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Prezime</label>
+            <input
+              type="text"
+              value={lastName}
+              onChange={e => setLastName(e.target.value)}
+              placeholder="npr. Horvat"
+              style={{ width: '100%', marginTop: 4 }}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Dob (godine) *</label>
+          <input
+            type="number"
+            value={age}
+            onChange={e => setAge(e.target.value)}
+            placeholder="npr. 18"
+            min="1"
+            max="120"
+            style={{ width: '100%', marginTop: 4 }}
+          />
+        </div>
+
+        <div className="form-group">
+          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Spol *</label>
+          <select
+            value={gender}
+            onChange={e => setGender(e.target.value)}
+            style={{ width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', background: '#fff', fontSize: '0.9rem' }}
           >
-            {profile.teams.icon} {profile.teams.name}
+            <option value="">Odaberi spol</option>
+            <option value="Muško">Muško</option>
+            <option value="Žensko">Žensko</option>
+            <option value="Drugo">Drugo</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Grad *</label>
+          <input
+            type="text"
+            value={city}
+            onChange={e => setCity(e.target.value)}
+            placeholder="npr. Split"
+            style={{ width: '100%', marginTop: 4 }}
+          />
+        </div>
+
+        <div className="form-group">
+          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Škola ili Fakultet *</label>
+          <input
+            type="text"
+            value={schoolOrCollege}
+            onChange={e => setSchoolOrCollege(e.target.value)}
+            placeholder="npr. Druga gimnazija"
+            style={{ width: '100%', marginTop: 4 }}
+          />
+        </div>
+
+        <div className="form-group">
+          <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Bio (Kratak opis)</label>
+          <textarea
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            placeholder="Napiši nešto o sebi..."
+            rows="3"
+            style={{ width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', resize: 'vertical' }}
+          />
+        </div>
+
+        <button
+          className="btn btn-primary btn-block"
+          onClick={handleSaveDetails}
+          disabled={savingDetails}
+          style={{ marginTop: 4 }}
+        >
+          {savingDetails ? <span className="loading-spinner" /> : 'Spremi podatke'}
+        </button>
+
+        {saveSuccess && (
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)', textAlign: 'center' }}>
+            {saveSuccess}
           </div>
         )}
       </div>
+    </div>
+  );
 
-      {/* Stats */}
-      <div className="profile-stats-card">
-        {statRows.map((row, i) => (
-          <div key={i} className="profile-stat-row">
-            <div className="profile-stat-left">
-              {row.icon}
-              <span className="profile-stat-label">{row.label}</span>
-            </div>
-            <span className="profile-stat-value">{row.value}</span>
-          </div>
-        ))}
+  const renderFeedback = () => (
+    <div className="profile-stats-card" style={{ margin: 0, padding: 20 }}>
+      <div className="subpage-header" style={{ padding: '0 0 16px 0', borderRadius: 0, marginBottom: 20 }}>
+        <button className="subpage-back-btn" onClick={() => setSubPage(null)} style={{ padding: '6px 8px', marginLeft: -8 }}>
+          <ArrowBackIcon style={{ fontSize: 18 }} /> Natrag
+        </button>
+        <h2 className="subpage-title">📬 Povratne informacije</h2>
       </div>
 
-      {/* Osobni podaci Gumb */}
-      <div 
-        className="profile-stats-card hover-scale" 
-        style={{ marginTop: 24, padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} 
-        onClick={() => {
-          setSaveSuccess('');
-          setShowEditDetails(true);
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: '1.4rem' }}>👤</span>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-dark)' }}>Osobni podaci</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Ažuriraj svoje demografske podatke i osvoji XP</div>
-          </div>
-        </div>
-        <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>➔</span>
-      </div>
-
-      {/* Povratne informacije Gumb */}
-      <div 
-        className="profile-stats-card hover-scale" 
-        style={{ marginTop: 16, padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} 
-        onClick={() => {
-          setFeedbackSuccess('');
-          setShowFeedbackModal(true);
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: '1.4rem' }}>📬</span>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-dark)' }}>Povratne informacije</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Podijeli svoje mišljenje ili prijedloge s nama</div>
-          </div>
-        </div>
-        <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>➔</span>
-      </div>
-
-      {/* Postavke i Sigurnost s integriranim PWA gumbom */}
-      <div className="profile-stats-card" style={{ marginTop: 24, padding: 20 }}>
-        <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', marginBottom: 16 }}>
-          ⚙️ Postavke i Sigurnost
-        </h3>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {installPrompt && (
-            <button
-              className="btn btn-primary btn-block"
-              onClick={handleInstallClick}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                gap: '8px',
-                background: 'linear-gradient(90deg, var(--prisa-teal), #2dd4bf)', 
-                border: 'none',
-                color: '#fff',
-                fontWeight: 700
-              }}
-            >
-              📱 Instaliraj Aplikaciju
-            </button>
-          )}
-
-          <button
-            className="btn btn-outline btn-block"
-            onClick={handlePushSubscribe}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '8px', 
-              background: 'var(--prisa-blue)',
-              borderColor: 'var(--prisa-blue)',
-              color: '#fff'
-            }}
-          >
-            <NotificationsIcon style={{ fontSize: 18 }} />
-            Pretplati se na obavijesti
-          </button>
-
-          <button
-            className="btn btn-outline btn-block"
-            onClick={() => setShowPrivacyPolicy(true)}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '8px'
-            }}
-          >
-            <ShieldIcon style={{ fontSize: 18 }} />
-            Politika privatnosti
-          </button>
-        </div>
-      </div>
-
-      {/* Logout */}
-      <button
-        className="btn btn-outline btn-block btn-large"
-        onClick={onLogout}
-        style={{ marginTop: 24, marginBottom: 32 }}
-      >
-        <LogoutIcon style={{ marginRight: '8px' }} />
-        Odjavi se
-      </button>
-
-      {/* ==========================================
-          MODALS / DIALOGS
-          ========================================== */}
-
-      {/* Osobni Podaci Drawer */}
-      {showEditDetails && (
-        <>
-          <div className="drawer-overlay" onClick={() => setShowEditDetails(false)} />
-          <div
-            className="drawer-panel"
-            ref={drawerRef}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={() => handleTouchEnd(() => setShowEditDetails(false))}
-          >
-            <div className="drawer-header">
-              <h2>👤 Osobni podaci</h2>
-              <button className="drawer-close-btn" onClick={() => setShowEditDetails(false)}>×</button>
-            </div>
-            <div className="drawer-body">
-              {!profile?.has_completed_details && (
-                <div style={{
-                  background: 'var(--prisa-orange-light)',
-                  color: 'var(--prisa-orange)',
-                  fontSize: '0.8rem',
-                  fontWeight: 800,
-                  padding: '10px 14px',
+      <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: 20, lineHeight: 1.5 }}>
+        Imaš ideju ili prijedlog? Tvoje mišljenje nam pomaže poboljšati aplikaciju!
+      </p>
+      
+      <form onSubmit={handleFeedbackSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div>
+          <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 8 }}>
+            Ocjena aplikacije:
+          </label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[1, 2, 3, 4, 5].map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setFeedbackRating(val)}
+                style={{
+                  flex: 1,
+                  padding: '10px',
                   borderRadius: 'var(--radius-sm)',
-                  marginBottom: 20,
-                  border: '1px solid rgba(240, 113, 71, 0.2)',
-                  lineHeight: 1.4
-                }}>
-                  🎁 Popuni sve obvezne podatke (Dob, Spol, Grad, Škola/Fakultet) za nagradu od +100 XP!
-                </div>
-              )}
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Ime</label>
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={e => setFirstName(e.target.value)}
-                      placeholder="npr. Ivan"
-                      style={{ width: '100%', marginTop: 4 }}
-                    />
-                  </div>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Prezime</label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={e => setLastName(e.target.value)}
-                      placeholder="npr. Horvat"
-                      style={{ width: '100%', marginTop: 4 }}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Dob (godine) *</label>
-                  <input
-                    type="number"
-                    value={age}
-                    onChange={e => setAge(e.target.value)}
-                    placeholder="npr. 18"
-                    min="1"
-                    max="120"
-                    style={{ width: '100%', marginTop: 4 }}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Spol *</label>
-                  <select
-                    value={gender}
-                    onChange={e => setGender(e.target.value)}
-                    style={{ width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', background: '#fff', fontSize: '0.9rem' }}
-                  >
-                    <option value="">Odaberi spol</option>
-                    <option value="Muško">Muško</option>
-                    <option value="Žensko">Žensko</option>
-                    <option value="Drugo">Drugo</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Grad *</label>
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    placeholder="npr. Split"
-                    style={{ width: '100%', marginTop: 4 }}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Škola ili Fakultet *</label>
-                  <input
-                    type="text"
-                    value={schoolOrCollege}
-                    onChange={e => setSchoolOrCollege(e.target.value)}
-                    placeholder="npr. Druga gimnazija"
-                    style={{ width: '100%', marginTop: 4 }}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Bio (Kratak opis)</label>
-                  <textarea
-                    value={bio}
-                    onChange={e => setBio(e.target.value)}
-                    placeholder="Napiši nešto o sebi..."
-                    rows="3"
-                    style={{ width: '100%', marginTop: 4, padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', resize: 'vertical' }}
-                  />
-                </div>
-
-                <button
-                  className="btn btn-primary btn-block"
-                  onClick={handleSaveDetails}
-                  disabled={savingDetails}
-                  style={{ marginTop: 4 }}
-                >
-                  {savingDetails ? <span className="loading-spinner" /> : 'Spremi podatke'}
-                </button>
-
-                {saveSuccess && (
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)', textAlign: 'center' }}>
-                    {saveSuccess}
-                  </div>
-                )}
-              </div>
-            </div>
+                  border: '1.5px solid var(--border-color)',
+                  background: feedbackRating >= val ? 'var(--prisa-orange-light)' : '#fff',
+                  color: feedbackRating >= val ? 'var(--prisa-orange)' : 'var(--text-muted)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '1.1rem',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                ⭐
+              </button>
+            ))}
           </div>
-        </>
+        </div>
+
+        <div>
+          <textarea
+            value={feedbackText}
+            onChange={e => setFeedbackText(e.target.value)}
+            placeholder="Napiši svoje komentare ili prijedloge..."
+            rows="4"
+            required
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', resize: 'vertical', fontSize: '0.9rem' }}
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="btn btn-primary btn-block"
+          disabled={submittingFeedback || !feedbackText.trim()}
+        >
+          {submittingFeedback ? <span className="loading-spinner" /> : 'Pošalji poruku'}
+        </button>
+      </form>
+
+      {feedbackSuccess && (
+        <div style={{ marginTop: 16, fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)', textAlign: 'center' }}>
+          {feedbackSuccess}
+        </div>
       )}
+    </div>
+  );
 
-      {/* Povratne Informacije Drawer */}
-      {showFeedbackModal && (
-        <>
-          <div className="drawer-overlay" onClick={() => setShowFeedbackModal(false)} />
-          <div
-            className="drawer-panel"
-            ref={drawerRef}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={() => handleTouchEnd(() => setShowFeedbackModal(false))}
-          >
-            <div className="drawer-header">
-              <h2>📬 Povratne informacije</h2>
-              <button className="drawer-close-btn" onClick={() => setShowFeedbackModal(false)}>×</button>
-            </div>
-            <div className="drawer-body">
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: 20, lineHeight: 1.5 }}>
-                Imaš ideju ili prijedlog? Tvoje mišljenje nam pomaže poboljšati aplikaciju!
-              </p>
-              
-              <form onSubmit={handleFeedbackSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                <div>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, display: 'block', marginBottom: 8 }}>
-                    Ocjena aplikacije:
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {[1, 2, 3, 4, 5].map((val) => (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => setFeedbackRating(val)}
-                        style={{
-                          flex: 1,
-                          padding: '10px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: '1.5px solid var(--border-color)',
-                          background: feedbackRating >= val ? 'var(--prisa-orange-light)' : '#fff',
-                          color: feedbackRating >= val ? 'var(--prisa-orange)' : 'var(--text-muted)',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          fontSize: '1.1rem',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        ⭐
-                      </button>
-                    ))}
-                  </div>
-                </div>
+  const renderPrivacy = () => (
+    <div className="profile-stats-card" style={{ margin: 0, padding: 20 }}>
+      <div className="subpage-header" style={{ padding: '0 0 16px 0', borderRadius: 0, marginBottom: 20 }}>
+        <button className="subpage-back-btn" onClick={() => setSubPage(null)} style={{ padding: '6px 8px', marginLeft: -8 }}>
+          <ArrowBackIcon style={{ fontSize: 18 }} /> Natrag
+        </button>
+        <h2 className="subpage-title">🔒 Politika privatnosti</h2>
+      </div>
 
-                <div>
-                  <textarea
-                    value={feedbackText}
-                    onChange={e => setFeedbackText(e.target.value)}
-                    placeholder="Napiši svoje komentare ili prijedloge..."
-                    rows="4"
-                    required
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--border-color)', resize: 'vertical', fontSize: '0.9rem' }}
-                  />
-                </div>
+      <div style={{ 
+        fontSize: '0.85rem', 
+        color: 'var(--text-dark)', 
+        lineHeight: 1.6,
+        textAlign: 'left'
+      }}>
+        <p style={{ marginTop: 0 }}>
+          <strong>Priša 2026</strong> je platforma posvećena istraživanju i unapređenju životnih navika mladih.
+        </p>
+        <p>
+          Svi podaci o unesenim navikama, izazovima i aktivnostima koriste se isključivo u agregiranom i potpuno anonimiziranom obliku za analitičke i istraživačke svrhe.
+        </p>
+        <p>
+          Nijedan osobni podatak (poput imena, prezimena ili adrese e-pošte) se ne dijeli s trećim stranama, niti se koristi u komercijalne svrhe.
+        </p>
+        <p>
+          Prikupljeni demografski podaci (dob, spol, lokacija, škola ili fakultet) služe isključivo za analizu trendova i donošenje preporuka za zdraviji život mladih u sklopu ovog znanstvenog projekta.
+        </p>
+        <p style={{ marginBottom: 0 }}>
+          Korištenjem ove aplikacije i spremanjem svojih podataka potvrđujete slaganje s navedenim uvjetima te sudjelovanjem u istraživanju. Hvala vam na doprinosu!
+        </p>
+      </div>
 
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-block"
-                  disabled={submittingFeedback || !feedbackText.trim()}
-                >
-                  {submittingFeedback ? <span className="loading-spinner" /> : 'Pošalji poruku'}
-                </button>
-              </form>
+      <button
+        className="btn btn-primary btn-block"
+        onClick={() => setSubPage(null)}
+        style={{ marginTop: '24px' }}
+      >
+        U redu, razumijem
+      </button>
+    </div>
+  );
 
-              {feedbackSuccess && (
-                <div style={{ marginTop: 16, fontSize: '0.85rem', fontWeight: 700, color: 'var(--prisa-teal)', textAlign: 'center' }}>
-                  {feedbackSuccess}
+  return (
+    <div className="profile-slider-container">
+      <div
+        className="profile-slider-track"
+        ref={sliderRef}
+        style={{
+          transform: subPage ? 'translateX(-50%)' : 'translateX(0)'
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Main profile slide */}
+        <div className="profile-slider-slide fade-in-content" style={{ padding: '0 4px' }}>
+          {/* Hero */}
+          <div className="profile-hero">
+            <div
+              className="profile-avatar-large"
+              onClick={() => fileRef.current?.click()}
+            >
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile?.name} />
+              ) : avatarLetter}
+              <div className="profile-avatar-overlay">
+                <CameraAltIcon />
+              </div>
+              {uploading && (
+                <div className="profile-avatar-overlay" style={{ opacity: 1 }}>
+                  <span className="loading-spinner" />
                 </div>
               )}
             </div>
-          </div>
-        </>
-      )}
-
-      {/* Privacy Policy Drawer */}
-      {showPrivacyPolicy && (
-        <>
-          <div className="drawer-overlay" onClick={() => setShowPrivacyPolicy(false)} />
-          <div
-            className="drawer-panel"
-            ref={drawerRef}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={() => handleTouchEnd(() => setShowPrivacyPolicy(false))}
-          >
-            <div className="drawer-header">
-              <h2>🔒 Politika privatnosti</h2>
-              <button className="drawer-close-btn" onClick={() => setShowPrivacyPolicy(false)}>×</button>
-            </div>
-            <div className="drawer-body">
-              <div style={{ 
-                fontSize: '0.85rem', 
-                color: 'var(--text-dark)', 
-                lineHeight: 1.6,
-                textAlign: 'left'
-              }}>
-                <p style={{ marginTop: 0 }}>
-                  <strong>Priša 2026</strong> je platforma posvećena istraživanju i unapređenju životnih navika mladih.
-                </p>
-                <p>
-                  Svi podaci o unesenim navikama, izazovima i aktivnostima koriste se isključivo u agregiranom i potpuno anonimiziranom obliku za analitičke i istraživačke svrhe.
-                </p>
-                <p>
-                  Nijedan osobni podatak (poput imena, prezimena ili adrese e-pošte) se ne dijeli s trećim stranama, niti se koristi u komercijalne svrhe.
-                </p>
-                <p>
-                  Prikupljeni demografski podaci (dob, spol, lokacija, škola ili fakultet) služe isključivo za analizu trendova i donošenje preporuka za zdraviji život mladih u sklopu ovog znanstvenog projekta.
-                </p>
-                <p style={{ marginBottom: 0 }}>
-                  Korištenjem ove aplikacije i spremanjem svojih podataka potvrđujete slaganje s navedenim uvjetima te sudjelovanjem u istraživanju. Hvala vam na doprinosu!
-                </p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              style={{ display: 'none' }}
+            />
+            <div className="profile-name">{profile?.name || 'Korisnik'}</div>
+            {profile?.teams && (
+              <div
+                className="profile-team-badge"
+                style={{
+                  background: `${profile.teams.color}20`,
+                  color: profile.teams.color,
+                }}
+              >
+                {profile.teams.icon} {profile.teams.name}
               </div>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="profile-stats-card">
+            {statRows.map((row, i) => (
+              <div key={i} className="profile-stat-row">
+                <div className="profile-stat-left">
+                  {row.icon}
+                  <span className="profile-stat-label">{row.label}</span>
+                </div>
+                <span className="profile-stat-value">{row.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Osobni podaci Gumb */}
+          <div 
+            className="profile-stats-card hover-scale" 
+            style={{ marginTop: 24, padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} 
+            onClick={() => {
+              setSaveSuccess('');
+              setSubPage('details');
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: '1.4rem' }}>👤</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-dark)' }}>Osobni podaci</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Ažuriraj svoje demografske podatke i osvoji XP</div>
+              </div>
+            </div>
+            <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>➔</span>
+          </div>
+
+          {/* Povratne informacije Gumb */}
+          <div 
+            className="profile-stats-card hover-scale" 
+            style={{ marginTop: 16, padding: '16px 20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} 
+            onClick={() => {
+              setFeedbackSuccess('');
+              setSubPage('feedback');
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: '1.4rem' }}>📬</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-dark)' }}>Povratne informacije</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>Podijeli svoje mišljenje ili prijedloge s nama</div>
+              </div>
+            </div>
+            <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>➔</span>
+          </div>
+
+          {/* Postavke i Sigurnost s integriranim PWA gumbom */}
+          <div className="profile-stats-card" style={{ marginTop: 24, padding: 20 }}>
+            <h3 style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.1rem', marginBottom: 16 }}>
+              ⚙️ Postavke i Sigurnost
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {installPrompt && (
+                <button
+                  className="btn btn-primary btn-block"
+                  onClick={handleInstallClick}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '8px',
+                    background: 'linear-gradient(90deg, var(--prisa-teal), #2dd4bf)', 
+                    border: 'none',
+                    color: '#fff',
+                    fontWeight: 700
+                  }}
+                >
+                  📱 Instaliraj Aplikaciju
+                </button>
+              )}
 
               <button
-                className="btn btn-primary btn-block"
-                onClick={() => setShowPrivacyPolicy(false)}
-                style={{ marginTop: '24px' }}
+                className="btn btn-outline btn-block"
+                onClick={handlePushSubscribe}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '8px', 
+                  background: 'var(--prisa-blue)',
+                  borderColor: 'var(--prisa-blue)',
+                  color: '#fff'
+                }}
               >
-                U redu, razumijem
+                <NotificationsIcon style={{ fontSize: 18 }} />
+                Pretplati se na obavijesti
+              </button>
+
+              <button
+                className="btn btn-outline btn-block"
+                onClick={() => setSubPage('privacy')}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '8px'
+                }}
+              >
+                <ShieldIcon style={{ fontSize: 18 }} />
+                Politika privatnosti
               </button>
             </div>
           </div>
-        </>
-      )}
+
+          {/* Logout */}
+          <button
+            className="btn btn-outline btn-block btn-large"
+            onClick={onLogout}
+            style={{ marginTop: 24, marginBottom: 32 }}
+          >
+            <LogoutIcon style={{ marginRight: '8px' }} />
+            Odjavi se
+          </button>
+        </div>
+
+        {/* Sub-page slide */}
+        <div className="profile-slider-slide" style={{ padding: '0 4px' }}>
+          {subPage === 'details' && renderDetails()}
+          {subPage === 'feedback' && renderFeedback()}
+          {subPage === 'privacy' && renderPrivacy()}
+        </div>
+      </div>
     </div>
   );
 }
