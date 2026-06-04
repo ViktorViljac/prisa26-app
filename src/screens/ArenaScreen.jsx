@@ -4,11 +4,20 @@ import { supabase } from '../lib/supabase';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 
+const formatName = (name) => {
+  if (!name) return 'Korisnik';
+  if (name.includes('.')) {
+    return name.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  }
+  return name;
+};
+
 export default function ArenaScreen() {
   const { profile } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [boss, setBoss] = useState(null);
   const [tiedChallenge, setTiedChallenge] = useState(null);
+  const [tiedCategory, setTiedCategory] = useState(null);
   const [recentDamage, setRecentDamage] = useState([]);
 
   const fetchData = async () => {
@@ -23,8 +32,16 @@ export default function ArenaScreen() {
       .limit(1);
     
     if (bosses && bosses.length > 0) {
-      setBoss(bosses[0]);
-      setTiedChallenge(bosses[0].challenges);
+      const activeBoss = bosses[0];
+      setBoss(activeBoss);
+      setTiedChallenge(activeBoss.challenges);
+
+      if (activeBoss.target_category_id) {
+        const { data: cat } = await supabase.from('challenge_categories').select('name').eq('id', activeBoss.target_category_id).single();
+        if (cat) setTiedCategory(cat.name);
+      } else {
+        setTiedCategory(null);
+      }
 
       // Fetch recent damage dealt to this boss
       const { data: damageLogs } = await supabase
@@ -117,19 +134,25 @@ export default function ArenaScreen() {
               </div>
             </div>
 
-            {tiedChallenge && (
-              <div style={{ background: 'var(--prisa-orange-light)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--prisa-orange)' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--prisa-orange)', textTransform: 'uppercase', marginBottom: 4 }}>
-                  🎯 Oružje protiv Bossa:
-                </div>
-                <div style={{ fontWeight: 700, color: 'var(--text-dark)' }}>
-                  {tiedChallenge.title}
-                </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                  Svaki put kada zabilježiš ovu naviku u Izazovima, Boss gubi HP!
-                </p>
+            <div style={{ background: 'var(--prisa-orange-light)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--prisa-orange)' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--prisa-orange)', textTransform: 'uppercase', marginBottom: 4 }}>
+                🎯 Oružje protiv Bossa:
               </div>
-            )}
+              <div style={{ fontWeight: 700, color: 'var(--text-dark)' }}>
+                {boss.target_all 
+                  ? "Sve navike!" 
+                  : boss.target_category_id 
+                    ? `Sve navike iz kategorije: ${tiedCategory || 'Odabrana kategorija'}`
+                    : tiedChallenge?.title || "Specifična navika"
+                }
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                {boss.target_all 
+                  ? "Svaki put kada zabilježiš bilo koju naviku, Boss gubi HP!"
+                  : "Svaki put kada zabilježiš ovu naviku u Izazovima, Boss gubi HP!"
+                }
+              </p>
+            </div>
           </div>
 
           {/* DAMAGE LOGS */}
@@ -153,7 +176,7 @@ export default function ArenaScreen() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '0.85rem', color: 'var(--text-dark)', fontWeight: 800 }}>
-                          {log.profiles?.name}
+                          {formatName(log.profiles?.name)}
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--prisa-orange)', fontWeight: 800, fontSize: '0.9rem' }}>

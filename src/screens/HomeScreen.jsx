@@ -207,7 +207,7 @@ export default function HomeScreen({ onNavigate }) {
       {/* Hero card — dark premium glassmorphic */}
       <div className="hero-card">
         <div className="hero-card-bg" />
-        <p className="hero-greeting">{greeting.g}, {profile?.name?.split(' ')[0] || 'Korisnik'} <span style={{ display: 'inline-block', transformOrigin: '70% 70%', animation: 'wave 2.4s ease-in-out infinite' }}>👋</span></p>
+        <p className="hero-greeting">{greeting.g}, {getFirstName(profile?.name)} <span style={{ display: 'inline-block', transformOrigin: '70% 70%', animation: 'wave 2.4s ease-in-out infinite' }}>👋</span></p>
 
         {/* Split greeting subtitle so we can apply gradient accent */}
         {(() => {

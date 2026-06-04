@@ -5,6 +5,14 @@ import { supabase } from '../lib/supabase';
 const MEDALS = ['🥇', '🥈', '🥉'];
 const PODIUM_CLASSES = ['gold', 'silver', 'bronze'];
 
+const formatName = (name) => {
+  if (!name) return 'Korisnik';
+  if (name.includes('.')) {
+    return name.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  }
+  return name;
+};
+
 export default function LeaderboardScreen() {
   const { profile } = useAuth();
   const [leaderboard, setLeaderboard] = useState([]);
@@ -89,7 +97,7 @@ export default function LeaderboardScreen() {
                 <div className="podium-avatar">
                   {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
                 </div>
-                <div className="podium-name">{user.name?.split(' ')[0]}</div>
+                <div className="podium-name">{formatName(user.name)?.split(' ')[0]}</div>
                 <div className="podium-xp">{user.xp} XP</div>
                 <div 
                   className={`podium-bar`} 
@@ -119,7 +127,7 @@ export default function LeaderboardScreen() {
                 {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
               </div>
               <div className="rank-info">
-                <div className="rank-name">{user.name}{isMe && ' (ti)'}</div>
+                <div className="rank-name">{formatName(user.name)}{isMe && ' (ti)'}</div>
               </div>
               <div className="rank-team-col">
                 <div 

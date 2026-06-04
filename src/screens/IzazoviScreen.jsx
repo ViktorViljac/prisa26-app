@@ -265,10 +265,13 @@ export default function IzazoviScreen() {
       if (!uploadError) {
         const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
+        const existing = getProgress(challenge.id);
+        const newProgress = Math.min((existing?.progress || 0) + 1, challenge.target_count);
+
         await supabase.from('user_challenges').upsert({
           user_id: profile.id,
           challenge_id: challenge.id,
-          progress: challenge.target_count,
+          progress: newProgress,
           is_completed: false, // Pending admin approval
           proof_url: publicUrl,
           date: today,
