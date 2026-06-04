@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import toast from 'react-hot-toast';
 
 export default function AdminArena() {
   const [arenaEnabled, setArenaEnabled] = useState(false);
@@ -64,7 +63,7 @@ export default function AdminArena() {
     } else {
       await supabase.from('app_settings').insert({ key: 'arena_enabled', value: newVal });
     }
-    toast.success(`Arena je sada ${newVal ? 'uključena' : 'isključena'}`);
+    alert(`Arena je sada ${newVal ? 'uključena' : 'isključena'}`);
   };
 
   const handleSaveBoss = async (e) => {
@@ -88,10 +87,10 @@ export default function AdminArena() {
       } else {
         await supabase.from('arena_bosses').insert(payload);
       }
-      toast.success('Boss uspješno spremljen!');
+      alert('Boss uspješno spremljen!');
       fetchData();
     } catch (err) {
-      toast.error('Greška pri spremanju bossa');
+      alert('Greška pri spremanju bossa');
       console.error(err);
     }
     setSaving(false);
