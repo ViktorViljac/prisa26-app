@@ -91,7 +91,10 @@ export default function LeaderboardScreen() {
                 </div>
                 <div className="podium-name">{user.name?.split(' ')[0]}</div>
                 <div className="podium-xp">{user.xp} XP</div>
-                <div className={`podium-bar`} />
+                <div 
+                  className={`podium-bar`} 
+                  style={user.teams?.color ? { background: user.teams.color } : {}}
+                />
               </div>
             );
           })}
@@ -141,16 +144,31 @@ export default function LeaderboardScreen() {
         <>
           <div className="teams-section-title" style={{ marginTop: '32px' }}>🏆 Timovi</div>
           <div className="teams-grid">
-            {teams.map(team => (
-              <div key={team.id} className="team-card hover-scale">
-                <div className="team-card-icon">{team.icon || '🏳️'}</div>
-                <div className="team-card-name">{team.name}</div>
-                <div className="team-card-members">{team.member_count || 0} članova</div>
-                <div className="team-card-score" style={{ color: team.color || 'var(--prisa-orange)' }}>
-                  {team.score || 0} bodova
+            {teams.map((team, i, arr) => {
+              const topScore = arr[0]?.score || 1;
+              const fillPercent = Math.max(5, Math.min(100, (team.score / topScore) * 100));
+              return (
+                <div key={team.id} className="team-card hover-scale" style={{ position: 'relative', overflow: 'hidden' }}>
+                  <div className="team-card-icon">{team.icon || '🏳️'}</div>
+                  <div className="team-card-name">{team.name}</div>
+                  <div className="team-card-members">{team.member_count || 0} članova</div>
+                  <div className="team-card-score" style={{ color: team.color || 'var(--prisa-orange)' }}>
+                    {team.score || 0} bodova
+                  </div>
+                  {/* Team Bar / Stupac */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    height: '6px',
+                    width: `${fillPercent}%`,
+                    background: team.color || 'var(--prisa-orange)',
+                    borderRadius: '0 4px 0 0',
+                    transition: 'width 1s ease'
+                  }} />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

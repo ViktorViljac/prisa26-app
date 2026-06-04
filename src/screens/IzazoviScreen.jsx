@@ -5,6 +5,8 @@ import posthog from 'posthog-js';
 import TimerIcon from '@mui/icons-material/Timer';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import Drawer from '../components/Drawer';
 import EditIcon from '@mui/icons-material/Edit';
 import TouchAppIcon from '@mui/icons-material/TouchApp';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
@@ -471,10 +473,19 @@ export default function IzazoviScreen() {
         )}
       </div>
 
-      {/* Challenge Detail Modal */}
-      {selectedChallenge && (
-        <div className="dialog-overlay" onClick={() => setSelectedChallenge(null)}>
-          <div className="dialog-card" onClick={e => e.stopPropagation()}>
+      {/* Challenge Detail Drawer */}
+      <Drawer 
+        isOpen={!!selectedChallenge} 
+        onClose={() => {
+          setSelectedChallenge(null);
+          setFieldValue('');
+          setPhotoFile(null);
+          setPhotoPreview(null);
+        }}
+        title="Detalji navike"
+      >
+        {selectedChallenge && (
+          <div className="challenge-detail-content">
             <div className="challenge-detail-header">
               <div className="card-icon-circle orange">
                 {getCategoryIcon(selectedChallenge.challenge_categories)}
@@ -565,8 +576,8 @@ export default function IzazoviScreen() {
               </div>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </Drawer>
     </div>
   );
 }

@@ -228,16 +228,17 @@ export default function HomeScreen({ onNavigate }) {
           {/* Level top — ring + level meta */}
           <div className="hero-level-top">
             <div className="hero-ring-wrap">
-               <svg width="110" height="110" viewBox="0 0 118 118">
+               <svg width="120" height="120" viewBox="0 0 120 120" style={{ filter: 'drop-shadow(0 8px 16px rgba(255, 107, 74, 0.2))' }}>
                  <defs>
                    <linearGradient id="hero-ring-grad" x1="0" y1="0" x2="1" y2="1">
-                     <stop offset="0" stopColor="#ffd166"/>
-                     <stop offset="1" stopColor="#ff6b4a"/>
+                     <stop offset="0" stopColor="#ffb703"/>
+                     <stop offset="0.5" stopColor="#ff6b4a"/>
+                     <stop offset="1" stopColor="#fb8500"/>
                    </linearGradient>
-                   <filter id="hero-ring-glow">
-                     <feGaussianBlur stdDeviation="3" result="blur" />
+                   <filter id="hero-ring-glow" x="-20%" y="-20%" width="140%" height="140%">
+                     <feGaussianBlur stdDeviation="4" result="blur" />
                      <feComponentTransfer in="blur" result="glow">
-                       <feFuncA type="linear" slope="0.6"/>
+                       <feFuncA type="linear" slope="0.75"/>
                      </feComponentTransfer>
                      <feMerge>
                        <feMergeNode in="glow" />
@@ -245,13 +246,13 @@ export default function HomeScreen({ onNavigate }) {
                      </feMerge>
                    </filter>
                  </defs>
-                 <circle cx="59" cy="59" r="52" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="9"/>
-                 <circle cx="59" cy="59" r="52" fill="none" stroke="url(#hero-ring-grad)" strokeWidth="9"
+                 <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.05)" strokeWidth="12"/>
+                 <circle cx="60" cy="60" r="50" fill="none" stroke="url(#hero-ring-grad)" strokeWidth="12"
                    strokeLinecap="round"
                    filter="url(#hero-ring-glow)"
-                   strokeDasharray={2 * Math.PI * 52}
-                   strokeDashoffset={2 * Math.PI * 52 - progressPct * 2 * Math.PI * 52}
-                   style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                   strokeDasharray={2 * Math.PI * 50}
+                   strokeDashoffset={2 * Math.PI * 50 - progressPct * 2 * Math.PI * 50}
+                   style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
                  />
                </svg>
               <div className="hero-ring-center">
