@@ -557,33 +557,40 @@ export default function IzazoviScreen() {
             {/* Photo Upload */}
             {selectedChallenge.verification_type === 'photo_upload' && (
               <div className="challenge-photo-upload">
-                {!photoPreview ? (
-                  <label className="photo-upload-area">
-                    <PhotoCameraIcon />
-                    <div className="photo-upload-text">Klikni za upload fotografije</div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                ) : (
-                  <div>
-                    <img src={photoPreview} alt="Preview" className="photo-preview" />
-                    <div className="pending-approval-badge" style={{ marginTop: 12 }}>
-                      ⏳ Čeka odobrenje admina
-                    </div>
+                {getProgress(selectedChallenge.id)?.proof_url && !getProgress(selectedChallenge.id)?.is_completed ? (
+                  <div style={{ textAlign: 'center', padding: '24px 20px', background: '#f8fafc', borderRadius: 'var(--radius-md)', border: '1px dashed #cbd5e1' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>⏳</div>
+                    <div style={{ fontWeight: 800, color: 'var(--text-dark)' }}>Dokaz je poslan!</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Admin trenutno pregledava tvoju prijavu. Možeš nastaviti s drugim navikama.</div>
                   </div>
+                ) : (
+                  <>
+                    {!photoPreview ? (
+                      <label className="photo-upload-area">
+                        <div style={{ fontSize: '2rem', marginBottom: 8 }}>📸</div>
+                        <div className="photo-upload-text">Klikni za odabir fotografije</div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoChange}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                    ) : (
+                      <div>
+                        <img src={photoPreview} alt="Preview" className="photo-preview" />
+                      </div>
+                    )}
+                    <button
+                      className="btn btn-primary btn-block btn-large"
+                      onClick={() => handlePhotoSubmit(selectedChallenge)}
+                      disabled={submitting || !photoFile}
+                      style={{ marginTop: 16 }}
+                    >
+                      {submitting ? <span className="loading-spinner" /> : '📸 Pošalji dokaz'}
+                    </button>
+                  </>
                 )}
-                <button
-                  className="btn btn-primary btn-block btn-large"
-                  onClick={() => handlePhotoSubmit(selectedChallenge)}
-                  disabled={submitting || !photoFile}
-                  style={{ marginTop: 16 }}
-                >
-                  {submitting ? <span className="loading-spinner" /> : '📸 Pošalji dokaz'}
-                </button>
               </div>
             )}
           </div>
