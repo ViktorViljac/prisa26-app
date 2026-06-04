@@ -68,6 +68,14 @@ function formatDate(dateStr) {
   return `Kreće: ${day}.${month}.`;
 }
 
+const getLocalDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function IzazoviScreen() {
   const { profile, refreshProfile } = useAuth();
   const [categories, setCategories] = useState([]);
@@ -128,7 +136,7 @@ export default function IzazoviScreen() {
     if (!challenge) return null;
 
     if (challenge.is_daily) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       return userChallenges.find(u => u.challenge_id === challengeId && u.date === today) || null;
     } else {
       const ucs = userChallenges.filter(u => u.challenge_id === challengeId);
@@ -141,7 +149,7 @@ export default function IzazoviScreen() {
     if (!profile) return;
     setSubmitting(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       const existing = getProgress(challenge.id);
       const newProgress = Math.min((existing?.progress || 0) + 1, challenge.target_count);
       const isDone = newProgress >= challenge.target_count;
@@ -196,7 +204,7 @@ export default function IzazoviScreen() {
     if (!profile || !fieldValue) return;
     setSubmitting(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       const numVal = parseInt(fieldValue) || 0;
       const existing = getProgress(challenge.id);
       const newProgress = Math.min((existing?.progress || 0) + numVal, challenge.target_count);
@@ -250,7 +258,7 @@ export default function IzazoviScreen() {
     if (!profile || !photoFile) return;
     setSubmitting(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       const filePath = `${profile.id}/challenge-proofs/${challenge.id}_${today}_${Date.now()}.${photoFile.name.split('.').pop()}`;
       const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, photoFile);
 

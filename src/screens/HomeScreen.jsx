@@ -124,7 +124,7 @@ export default function HomeScreen({ onNavigate }) {
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       
       // 1. Fetch quote
       let { data: quotesList } = await supabase
