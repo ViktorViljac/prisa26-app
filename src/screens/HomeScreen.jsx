@@ -10,6 +10,24 @@ import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
+const getLocalDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatName = (name) => {
+  if (!name) return 'Korisnik';
+  if (name.includes('.')) {
+    return name.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  }
+  return name;
+};
+
+const getFirstName = (name) => formatName(name).split(' ')[0];
+
 const DEFAULT_LEVELS = [
   { level: 1, name: 'Početnik', icon: '🐣', xp: 0 },
   { level: 2, name: 'Tragač', icon: '🔍', xp: 500 },
