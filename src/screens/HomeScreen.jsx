@@ -64,6 +64,7 @@ export default function HomeScreen({ onNavigate }) {
   const [arenaEnabled, setArenaEnabled] = useState(false);
   const [showLevelProgression, setShowLevelProgression] = useState(false);
   const [greeting] = useState(() => getGreetingData());
+  const [progressPct, setProgressPct] = useState(0);
 
   const totalXp = profile?.xp || 0;
   const level = Math.floor(totalXp / 500) + 1;
@@ -75,6 +76,16 @@ export default function HomeScreen({ onNavigate }) {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
   }, []);
+
+  // Progress ring animation
+  useEffect(() => {
+    if (!mounted) return;
+    const targetPct = xpIntoLevel / xpForNext;
+    const t = setTimeout(() => {
+      setProgressPct(targetPct);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [mounted, xpIntoLevel, xpForNext]);
 
   // XP count-up
   useEffect(() => {
@@ -217,21 +228,32 @@ export default function HomeScreen({ onNavigate }) {
           {/* Level top — ring + level meta */}
           <div className="hero-level-top">
             <div className="hero-ring-wrap">
-              <svg width="110" height="110" viewBox="0 0 118 118">
-                <circle cx="59" cy="59" r="52" fill="none" stroke="rgba(255,255,255,.1)" strokeWidth="9"/>
-                <circle cx="59" cy="59" r="52" fill="none" stroke="url(#hero-ring-grad)" strokeWidth="9"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 52}
-                  strokeDashoffset={2 * Math.PI * 52 - (xpIntoLevel / xpForNext) * 2 * Math.PI * 52}
-                  style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}
-                />
-                <defs>
-                  <linearGradient id="hero-ring-grad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stopColor="#ffd166"/>
-                    <stop offset="1" stopColor="#ff6b4a"/>
-                  </linearGradient>
-                </defs>
-              </svg>
+               <svg width="110" height="110" viewBox="0 0 118 118">
+                 <defs>
+                   <linearGradient id="hero-ring-grad" x1="0" y1="0" x2="1" y2="1">
+                     <stop offset="0" stopColor="#ffd166"/>
+                     <stop offset="1" stopColor="#ff6b4a"/>
+                   </linearGradient>
+                   <filter id="hero-ring-glow">
+                     <feGaussianBlur stdDeviation="3" result="blur" />
+                     <feComponentTransfer in="blur" result="glow">
+                       <feFuncA type="linear" slope="0.6"/>
+                     </feComponentTransfer>
+                     <feMerge>
+                       <feMergeNode in="glow" />
+                       <feMergeNode in="SourceGraphic" />
+                     </feMerge>
+                   </filter>
+                 </defs>
+                 <circle cx="59" cy="59" r="52" fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="9"/>
+                 <circle cx="59" cy="59" r="52" fill="none" stroke="url(#hero-ring-grad)" strokeWidth="9"
+                   strokeLinecap="round"
+                   filter="url(#hero-ring-glow)"
+                   strokeDasharray={2 * Math.PI * 52}
+                   strokeDashoffset={2 * Math.PI * 52 - progressPct * 2 * Math.PI * 52}
+                   style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                 />
+               </svg>
               <div className="hero-ring-center">
                 <b>{level}</b>
                 <span>RAZINA</span>
