@@ -25,6 +25,7 @@ import AdminQuotes from './pages/admin/AdminQuotes';
 import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminLevels from './pages/admin/AdminLevels';
+import AdminArena from './pages/admin/AdminArena';
 
 const SCREEN_TITLES = ['Početna', 'Navike', 'Arena', 'Liderbord', 'Izazovi', 'Profil'];
 
@@ -210,6 +211,7 @@ export default function App() {
         <Route path="teams" element={<AdminTeams />} />
         <Route path="quotes" element={<AdminQuotes />} />
         <Route path="notifications" element={<AdminNotifications />} />
+        <Route path="arena" element={<AdminArena />} />
       </Route>
 
       <Route

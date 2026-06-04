@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { label: 'Timovi', path: 'teams', icon: GroupsIcon },
   { label: 'Citati', path: 'quotes', icon: FormatQuoteIcon },
   { label: 'Obavijesti', path: 'notifications', icon: NotificationsIcon },
+  { label: 'Arena & Boss', path: 'arena', icon: MilitaryTechIcon },
 ];
 
 export default function AdminLayout() {
