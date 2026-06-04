@@ -74,8 +74,8 @@ export default function AdminChallenges() {
     try {
       const payload = {
         ...form,
-        xp_reward: parseInt(form.xp_reward) || 0,
-        target_count: parseInt(form.target_count) || 1,
+        xp_reward: isNaN(parseInt(form.xp_reward, 10)) ? 0 : parseInt(form.xp_reward, 10),
+        target_count: isNaN(parseInt(form.target_count, 10)) ? 1 : Math.max(1, parseInt(form.target_count, 10)),
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         input_question: form.verification_type === 'field_input' ? form.input_question : null,

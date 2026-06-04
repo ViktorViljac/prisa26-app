@@ -122,8 +122,17 @@ export default function IzazoviScreen() {
   const completed = userChallenges.filter(uc => uc.is_completed).length;
 
   const getProgress = (challengeId) => {
-    const uc = userChallenges.find(u => u.challenge_id === challengeId);
-    return uc || null;
+    const challenge = challenges.find(c => c.id === challengeId);
+    if (!challenge) return null;
+
+    if (challenge.is_daily) {
+      const today = new Date().toISOString().split('T')[0];
+      return userChallenges.find(u => u.challenge_id === challengeId && u.date === today) || null;
+    } else {
+      const ucs = userChallenges.filter(u => u.challenge_id === challengeId);
+      if (ucs.length === 0) return null;
+      return ucs.reduce((max, current) => (current.progress > max.progress ? current : max), ucs[0]);
+    }
   };
 
   const handleSelfReport = async (challenge) => {
@@ -145,12 +154,16 @@ export default function IzazoviScreen() {
       }, { onConflict: 'user_id,challenge_id,date' });
 
       if (!error) {
-        if (isDone) {
-          // Award XP
+        const increment = newProgress - (existing?.progress || 0);
+        if (increment > 0) {
+          // Award XP for each step
           await supabase.rpc('award_xp', {
             p_user_id: profile.id,
-            p_xp_amount: challenge.xp_reward,
+            p_xp_amount: challenge.xp_reward * increment,
           });
+        }
+
+        if (isDone) {
           posthog.capture('challenge_completed', {
             challenge_id: challenge.id,
             challenge_title: challenge.title,
@@ -196,11 +209,15 @@ export default function IzazoviScreen() {
         date: today,
       }, { onConflict: 'user_id,challenge_id,date' });
 
-      if (isDone) {
+      const increment = newProgress - (existing?.progress || 0);
+      if (increment > 0) {
         await supabase.rpc('award_xp', {
           p_user_id: profile.id,
-          p_xp_amount: challenge.xp_reward,
+          p_xp_amount: challenge.xp_reward * increment,
         });
+      }
+
+      if (isDone) {
         posthog.capture('challenge_completed', {
           challenge_id: challenge.id,
           challenge_title: challenge.title,
