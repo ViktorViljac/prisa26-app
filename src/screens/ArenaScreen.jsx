@@ -205,8 +205,32 @@ export default function ArenaScreen() {
       </div>
 
       {!boss ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-          Trenutno nema aktivnih Bosseva. Odmori se, ratniče! 🛡️
+        <div className="arena-premium-container" style={{ padding: '32px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div className="arena-premium-glow" style={{ background: 'radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0) 70%)' }} />
+          
+          <img 
+            src="/images/castle_peaceful.png" 
+            alt="Peaceful Castle" 
+            style={{ 
+              width: '100%', 
+              maxWidth: '300px', 
+              height: '180px', 
+              borderRadius: '12px', 
+              objectFit: 'cover',
+              border: '3px solid rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(59, 130, 246, 0.15)',
+              marginBottom: '24px',
+              animation: 'float-boss 4s ease-in-out infinite'
+            }} 
+          />
+          
+          <h2 style={{ fontSize: '1.6rem', fontFamily: 'var(--font-heading)', color: '#fff', margin: '0 0 8px 0', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+            Mir Vlada Kraljevstvom 🏰
+          </h2>
+          
+          <p style={{ color: '#cbd5e1', fontSize: '0.95rem', maxWidth: '360px', margin: '0 0 8px 0', lineHeight: 1.5 }}>
+            Trenutno nema aktivnih prijetnji. Odmori se, ratniče! Iskoristi ovo mirno vrijeme za jačanje i dovršavanje svojih navika. 🛡️
+          </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
