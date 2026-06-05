@@ -24,6 +24,75 @@ export default function ArenaScreen() {
   const [timeLeft, setTimeLeft] = useState('');
   const [isExpired, setIsExpired] = useState(false);
 
+  // 3D Card Hover & Tilt states
+  const [rotateX, setRotateX] = useState(0);
+  const [rotateY, setRotateY] = useState(0);
+  const [shinePos, setShinePos] = useState({ x: 50, y: 50 });
+  const [isHovering, setIsHovering] = useState(false);
+
+  const handleMouseMove = (e) => {
+    const card = e.currentTarget;
+    const box = card.getBoundingClientRect();
+    const x = e.clientX - box.left;
+    const y = e.clientY - box.top;
+    
+    const centerX = box.width / 2;
+    const centerY = box.height / 2;
+    
+    // Rotate values (max 12 degrees)
+    const rotX = -((y - centerY) / centerY) * 12;
+    const rotY = ((x - centerX) / centerX) * 12;
+    
+    // Shine position (percent)
+    const shineX = (x / box.width) * 100;
+    const shineY = (y / box.height) * 100;
+    
+    setRotateX(rotX);
+    setRotateY(rotY);
+    setShinePos({ x: shineX, y: shineY });
+    setIsHovering(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setRotateX(0);
+    setRotateY(0);
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 0) return;
+    const card = e.currentTarget;
+    const box = card.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - box.left;
+    const y = touch.clientY - box.top;
+    
+    if (x < 0 || x > box.width || y < 0 || y > box.height) {
+      handleTouchEnd();
+      return;
+    }
+    
+    const centerX = box.width / 2;
+    const centerY = box.height / 2;
+    
+    const rotX = -((y - centerY) / centerY) * 12;
+    const rotY = ((x - centerX) / centerX) * 12;
+    
+    const shineX = (x / box.width) * 100;
+    const shineY = (y / box.height) * 100;
+    
+    setRotateX(rotX);
+    setRotateY(rotY);
+    setShinePos({ x: shineX, y: shineY });
+    setIsHovering(true);
+  };
+
+  const handleTouchEnd = () => {
+    setIsHovering(false);
+    setRotateX(0);
+    setRotateY(0);
+  };
+
   const fetchData = async () => {
     if (!profile) return;
     
@@ -143,7 +212,28 @@ export default function ArenaScreen() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* PREMIUM BOSS CARD */}
-          <div className="arena-premium-container">
+          <div 
+            className="arena-premium-container"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{
+              transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`,
+              transition: isHovering ? 'transform 0.08s ease-out' : 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.5s ease',
+            }}
+          >
+            {/* Holographic shiny overlay */}
+            <div 
+              className="arena-holo-shine" 
+              style={{
+                background: `radial-gradient(circle at ${shinePos.x}% ${shinePos.y}%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 50%), 
+                             linear-gradient(${135 + rotateY}deg, rgba(255,0,0,0.04) 0%, rgba(255,154,0,0.04) 15%, rgba(208,222,33,0.04) 30%, rgba(79,220,74,0.04) 45%, rgba(63,218,216,0.04) 60%, rgba(28,127,238,0.04) 75%, rgba(186,12,248,0.04) 90%, rgba(251,7,217,0.04) 100%)`,
+                opacity: isHovering ? 1 : 0,
+                transition: 'opacity 0.3s ease',
+              }}
+            />
+
             <div className="arena-premium-glow" />
             
             {/* Victory Overlay */}
@@ -170,14 +260,14 @@ export default function ArenaScreen() {
 
             {/* Timer */}
             {boss.end_date && !isDefeated && !isExpired && (
-              <div className="arena-timer">
+              <div className="arena-timer" style={{ transform: 'translateZ(40px)' }}>
                 <AccessTimeIcon fontSize="small" style={{ color: '#fbbf24' }} />
                 <span>Preostalo: <span style={{ color: '#fbbf24' }}>{timeLeft}</span></span>
               </div>
             )}
 
-            {/* Boss Image */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+            {/* Boss Image Container */}
+            <div className="arena-boss-image-container">
               {boss.avatar_url ? (
                 <img src={boss.avatar_url} alt="Boss" className="arena-boss-image" />
               ) : (
@@ -185,15 +275,15 @@ export default function ArenaScreen() {
               )}
             </div>
 
-            <h2 style={{ margin: '0 0 8px 0', fontSize: '2rem', fontFamily: 'var(--font-heading)', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+            <h2 className="arena-boss-title" style={{ margin: '0 0 8px 0', fontSize: '2rem', fontFamily: 'var(--font-heading)', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
               {boss.name}
             </h2>
-            <p style={{ color: '#cbd5e1', margin: '0 auto 32px auto', fontSize: '1rem', maxWidth: '400px', lineHeight: 1.5 }}>
+            <p className="arena-boss-desc" style={{ color: '#cbd5e1', margin: '0 auto 32px auto', fontSize: '1rem', maxWidth: '400px', lineHeight: 1.5 }}>
               {boss.description}
             </p>
             
             {/* HP Bar */}
-            <div style={{ marginBottom: 32, padding: '0 20px' }}>
+            <div className="arena-boss-hp" style={{ marginBottom: 32, padding: '0 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: '1rem', fontWeight: 800 }}>
                 <span style={{ color: '#f87171', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>HP</span>
                 <span style={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{boss.current_hp} / {boss.max_hp}</span>
@@ -204,7 +294,7 @@ export default function ArenaScreen() {
             </div>
 
             {/* Target Info */}
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', display: 'inline-block', textAlign: 'left' }}>
+            <div className="arena-boss-target" style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', display: 'inline-block', textAlign: 'left' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', marginBottom: 8 }}>
                 <ErrorOutlineIcon fontSize="small" /> Oružje protiv Bossa
               </div>

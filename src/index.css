@@ -2715,6 +2715,45 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
   text-align: center;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.arena-holo-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  pointer-events: none;
+  mix-blend-mode: color-dodge;
+  will-change: background;
+}
+
+.arena-boss-image-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+  transform: translateZ(50px);
+  transform-style: preserve-3d;
+}
+
+.arena-boss-title {
+  transform: translateZ(35px);
+}
+
+.arena-boss-desc {
+  transform: translateZ(25px);
+}
+
+.arena-boss-hp {
+  transform: translateZ(30px);
+}
+
+.arena-boss-target {
+  transform: translateZ(20px);
 }
 
 .arena-premium-glow {
@@ -2794,6 +2833,7 @@ body {
   justify-content: center;
   padding: 24px;
   animation: fade-in-victory 1s ease-out forwards;
+  transform: translateZ(60px);
 }
 
 @keyframes fade-in-victory {
