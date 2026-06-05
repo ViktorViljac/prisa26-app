@@ -161,7 +161,7 @@ export default function ArenaScreen() {
             {!isDefeated && isExpired && (
               <div className="arena-victory-overlay" style={{ background: 'rgba(40,0,0,0.9)' }}>
                 <div style={{ fontSize: '4rem', marginBottom: 16 }}>💀</div>
-                <h2 className="victory-title" style={{ background: 'linear-gradient(135deg, #ef4444, #991b1b)' }}>Vrijeme je isteklo</h2>
+                <h2 className="defeat-title">Vrijeme je isteklo</h2>
                 <p className="victory-message">
                   Boss je preživio vaš napad i pobjegao. Pokušajte ponovno sljedeći put!
                 </p>

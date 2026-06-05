@@ -2812,6 +2812,15 @@ body {
   text-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
 }
 
+.defeat-title {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ef4444;
+  margin: 0 0 16px 0;
+  text-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
+}
+
 .victory-message {
   font-size: 1.1rem;
   color: #e2e8f0;
