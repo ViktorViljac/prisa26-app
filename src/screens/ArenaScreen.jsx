@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutlined';
 
 const formatName = (name) => {
   if (!name) return 'Korisnik';
@@ -199,7 +199,7 @@ export default function ArenaScreen() {
                 <span style={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{boss.current_hp} / {boss.max_hp}</span>
               </div>
               <div className="arena-hp-bar-bg">
-                <div className="arena-hp-bar-fill" style={{ width: \`\${hpPercent}%\` }} />
+                <div className="arena-hp-bar-fill" style={{ width: `${hpPercent}%` }} />
               </div>
             </div>
 
@@ -212,7 +212,7 @@ export default function ArenaScreen() {
                 {boss.target_all 
                   ? "Sve navike!" 
                   : boss.target_category_id 
-                    ? \`Kategorija: \${tiedCategory || 'Odabrana kategorija'}\`
+                    ? `Kategorija: ${tiedCategory || 'Odabrana kategorija'}`
                     : tiedChallenge?.title || "Specifična navika"
                 }
               </div>
