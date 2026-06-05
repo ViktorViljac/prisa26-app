@@ -61,6 +61,18 @@ export default function PostignucaScreen() {
       if (!codeErr && codeRow && codeRow.achievements) {
         const ach = codeRow.achievements;
         
+        // Prevent unlocking coming_soon or hidden achievements
+        if (ach.visibility === 'coming_soon') {
+          setCodeError('Ovaj izazov još nije dostupan (uskoro dolazi)!');
+          setSubmitting(false);
+          return;
+        }
+        if (ach.visibility === 'hidden') {
+          setCodeError('Nepoznat ili nevažeći kod.');
+          setSubmitting(false);
+          return;
+        }
+
         // Check if already unlocked
         if (isUnlocked(ach.id)) {
           setCodeError('Već imaš ovo postignuće!');
@@ -118,6 +130,18 @@ export default function PostignucaScreen() {
 
       if (!ach) {
         setCodeError('Nepoznat ili već iskorišten kod. Pokušaj ponovo.');
+        setSubmitting(false);
+        return;
+      }
+
+      // Prevent unlocking coming_soon or hidden achievements
+      if (ach.visibility === 'coming_soon') {
+        setCodeError('Ovaj izazov još nije dostupan (uskoro dolazi)!');
+        setSubmitting(false);
+        return;
+      }
+      if (ach.visibility === 'hidden') {
+        setCodeError('Nepoznat ili nevažeći kod.');
         setSubmitting(false);
         return;
       }
