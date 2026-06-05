@@ -344,6 +344,35 @@ export default function ProfileScreen({ onLogout }) {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Profile Picture Change Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 8 }}>
+          <div
+            className="profile-avatar-large"
+            onClick={() => fileRef.current?.click()}
+            style={{ margin: '0 auto 8px' }}
+          >
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt={profile?.name} />
+            ) : avatarLetter}
+            <div className="profile-avatar-overlay">
+              <CameraAltIcon />
+            </div>
+            {uploading && (
+              <div className="profile-avatar-overlay" style={{ opacity: 1 }}>
+                <span className="loading-spinner" />
+              </div>
+            )}
+          </div>
+          <button 
+            type="button"
+            className="btn btn-outline btn-sm" 
+            onClick={() => fileRef.current?.click()}
+            style={{ fontSize: '0.75rem', padding: '4px 12px' }}
+          >
+            Promijeni sliku
+          </button>
+        </div>
+
         <div style={{ display: 'flex', gap: 12 }}>
           <div className="form-group" style={{ flex: 1 }}>
             <label style={{ fontSize: '0.8rem', fontWeight: 700 }}>Ime</label>
