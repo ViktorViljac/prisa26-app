@@ -1607,6 +1607,60 @@ body {
   opacity: 0.7;
   border-left: 3px solid var(--prisa-teal);
 }
+.challenge-card.self-report-card {
+  cursor: default;
+}
+
+/* One-tap button on self-report challenge cards */
+.card-tap-btn {
+  flex-shrink: 0;
+  align-self: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), opacity 0.15s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.card-tap-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+}
+.card-tap-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+.card-tap-btn.tapping {
+  opacity: 0.7;
+  cursor: wait;
+  transform: scale(0.95);
+}
+.card-tap-btn.just-done {
+  background: linear-gradient(135deg, var(--prisa-teal), #0f766e) !important;
+  transform: scale(1.15);
+}
+.card-tap-plus {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+@keyframes tapPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.88); }
+  70% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.card-tap-btn:not(.tapping):active {
+  animation: tapPop 0.25s var(--ease) forwards;
+}
 
 .challenge-icon {
   width: 44px;

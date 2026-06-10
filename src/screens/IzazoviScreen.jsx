@@ -89,6 +89,8 @@ export default function IzazoviScreen() {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [tappingId, setTappingId] = useState(null); // tracks which card is being tapped
+  const [justDoneId, setJustDoneId] = useState(null); // for success flash animation
 
   // Fetch data
   useEffect(() => {
@@ -145,9 +147,13 @@ export default function IzazoviScreen() {
     }
   };
 
-  const handleSelfReport = async (challenge) => {
+  const handleSelfReport = async (challenge, fromCard = false) => {
     if (!profile) return;
-    setSubmitting(true);
+    if (fromCard) {
+      setTappingId(challenge.id);
+    } else {
+      setSubmitting(true);
+    }
     try {
       const today = getLocalDateString();
       const existing = getProgress(challenge.id);
@@ -166,7 +172,6 @@ export default function IzazoviScreen() {
       if (!error) {
         const increment = newProgress - (existing?.progress || 0);
         if (increment > 0) {
-          // Award XP for each step
           await supabase.rpc('award_xp', {
             p_user_id: profile.id,
             p_xp_amount: challenge.xp_reward * increment,
@@ -174,6 +179,8 @@ export default function IzazoviScreen() {
         }
 
         if (isDone) {
+          setJustDoneId(challenge.id);
+          setTimeout(() => setJustDoneId(null), 1500);
           posthog.capture('challenge_completed', {
             challenge_id: challenge.id,
             challenge_title: challenge.title,
@@ -188,16 +195,18 @@ export default function IzazoviScreen() {
           });
         }
         await refreshProfile();
-        
-        // Refresh user challenges
         const { data } = await supabase.from('user_challenges').select('*').eq('user_id', profile.id);
         if (data) setUserChallenges(data);
       }
     } catch (err) {
       console.error('Challenge completion error:', err);
     }
-    setSubmitting(false);
-    setSelectedChallenge(null);
+    if (fromCard) {
+      setTappingId(null);
+    } else {
+      setSubmitting(false);
+      setSelectedChallenge(null);
+    }
   };
 
   const handleFieldSubmit = async (challenge) => {
@@ -456,11 +465,20 @@ export default function IzazoviScreen() {
           }
 
           // 3. Regular Visible card
+          const isSelfReport = verifyType === 'self_report' || !challenge.verification_type;
+          const isTapping = tappingId === challenge.id;
+          const isJustDone = justDoneId === challenge.id;
+
           return (
             <div
               key={challenge.id}
-              className={`challenge-card ${isDone ? 'completed' : ''}`}
-              onClick={() => !isDone && setSelectedChallenge(challenge)}
+              className={`challenge-card ${isDone ? 'completed' : ''} ${isSelfReport && !isDone ? 'self-report-card' : ''}`}
+              onClick={() => {
+                // For non-self-report or multi-target self-report that needs context: open drawer
+                if (!isDone && !isSelfReport) {
+                  setSelectedChallenge(challenge);
+                }
+              }}
             >
               <div
                 className="challenge-icon"
@@ -492,6 +510,28 @@ export default function IzazoviScreen() {
                   <span className="challenge-xp-badge">⚡ {challenge.xp_reward} XP</span>
                 </div>
               </div>
+
+              {/* One-tap button for self_report challenges */}
+              {isSelfReport && !isDone && (
+                <button
+                  className={`card-tap-btn ${isTapping ? 'tapping' : ''} ${isJustDone ? 'just-done' : ''}`}
+                  style={{ background: `linear-gradient(135deg, ${gradStart}, ${gradEnd})` }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isTapping) handleSelfReport(challenge, true);
+                  }}
+                  disabled={isTapping}
+                  aria-label="Zabilježi napredak"
+                >
+                  {isTapping ? (
+                    <span className="loading-spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                  ) : isJustDone ? (
+                    <CheckCircleIcon style={{ fontSize: 22 }} />
+                  ) : (
+                    <span className="card-tap-plus">+1</span>
+                  )}
+                </button>
+              )}
             </div>
           );
         })}
