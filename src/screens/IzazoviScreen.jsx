@@ -259,36 +259,55 @@ export default function IzazoviScreen() {
     setSubmitting(true);
     try {
       const today = getLocalDateString();
-      const filePath = `${profile.id}/challenge-proofs/${challenge.id}_${today}_${Date.now()}.${photoFile.name.split('.').pop()}`;
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, photoFile);
+      const ext = photoFile.name.split('.').pop();
+      // Deterministic path: one file per user per challenge per day (upsert replaces it)
+      const filePath = `${profile.id}/challenge-proofs/${challenge.id}_${today}.${ext}`;
 
-      if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, photoFile, { upsert: true });
 
-        const existing = getProgress(challenge.id);
-        const newProgress = Math.min((existing?.progress || 0) + 1, challenge.target_count);
-
-        await supabase.from('user_challenges').upsert({
-          user_id: profile.id,
-          challenge_id: challenge.id,
-          progress: newProgress,
-          is_completed: false, // Pending admin approval
-          proof_url: publicUrl,
-          date: today,
-        }, { onConflict: 'user_id,challenge_id,date' });
-
-        posthog.capture('challenge_photo_submitted', {
-          challenge_id: challenge.id,
-          challenge_title: challenge.title,
-        });
-
-        const { data } = await supabase.from('user_challenges').select('*').eq('user_id', profile.id);
-        if (data) setUserChallenges(data);
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        alert('Greška pri slanju fotografije. Pokušaj ponovo.');
+        setSubmitting(false);
+        return;
       }
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+      const existing = getProgress(challenge.id);
+      const newProgress = Math.min((existing?.progress || 0) + 1, challenge.target_count);
+
+      const { error: upsertError } = await supabase.from('user_challenges').upsert({
+        user_id: profile.id,
+        challenge_id: challenge.id,
+        progress: newProgress,
+        is_completed: false, // Pending admin approval
+        proof_url: publicUrl,
+        date: today,
+      }, { onConflict: 'user_id,challenge_id,date' });
+
+      if (upsertError) {
+        console.error('Upsert error:', upsertError);
+        alert('Greška pri spremanju napretka. Pokušaj ponovo.');
+        setSubmitting(false);
+        return;
+      }
+
+      posthog.capture('challenge_photo_submitted', {
+        challenge_id: challenge.id,
+        challenge_title: challenge.title,
+      });
+
+      const { data } = await supabase.from('user_challenges').select('*').eq('user_id', profile.id);
+      if (data) setUserChallenges(data);
+
       setPhotoFile(null);
       setPhotoPreview(null);
     } catch (err) {
       console.error('Photo submit error:', err);
+      alert('Neočekivana greška. Pokušaj ponovo.');
     }
     setSubmitting(false);
     setSelectedChallenge(null);
