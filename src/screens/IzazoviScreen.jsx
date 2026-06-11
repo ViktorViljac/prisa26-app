@@ -577,16 +577,8 @@ export default function IzazoviScreen() {
               </span>
             </div>
 
-            {/* Self Report (Tap to Increment) */}
-            {(selectedChallenge.verification_type === 'self_report' || !selectedChallenge.verification_type) && (
-              <button
-                className="btn btn-primary btn-block btn-large"
-                onClick={() => handleSelfReport(selectedChallenge)}
-                disabled={submitting}
-              >
-                {submitting ? <span className="loading-spinner" /> : `➕ Zabilježi napredak (+1)`}
-              </button>
-            )}
+            {/* Self Report challenges complete directly on the card — no drawer needed */}
+
 
             {/* Field Input */}
             {selectedChallenge.verification_type === 'field_input' && (

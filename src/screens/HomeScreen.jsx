@@ -169,11 +169,12 @@ export default function HomeScreen({ onNavigate }) {
       if (quote) setDailyQuote(quote);
 
       // 2. Fetch custom levels
+      const currentLevel = Math.floor((profile?.xp || 0) / 500) + 1;
       const { data: levels } = await supabase.from('levels').select('*');
       if (levels) {
-        const match = levels.find(l => l.level === level);
+        const match = levels.find(l => l.level === currentLevel);
         if (match) setLevelInfo(match);
-        else setLevelInfo({ name: `Razina ${level}`, icon: '⭐' });
+        else setLevelInfo({ name: `Razina ${currentLevel}`, icon: '⭐' });
       }
 
       // 3. Fetch achievements ratio (unlocked / total)
@@ -209,7 +210,7 @@ export default function HomeScreen({ onNavigate }) {
       }
     };
     fetchData();
-  }, [profile, level]);
+  }, [profile]);
 
   // greeting is stored in state to remain stable
 

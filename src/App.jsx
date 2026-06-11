@@ -27,7 +27,7 @@ import AdminCategories from './pages/admin/AdminCategories';
 import AdminLevels from './pages/admin/AdminLevels';
 import AdminArena from './pages/admin/AdminArena';
 
-const SCREEN_TITLES = ['Početna', 'Navike', 'Arena', 'Liderbord', 'Izazovi', 'Profil'];
+const SCREEN_TITLES = ['Početna', 'Navike', 'Arena', 'Liderbord', 'Postignuća', 'Profil'];
 
 function AppShell() {
   const { signOut, loading, user } = useAuth();
