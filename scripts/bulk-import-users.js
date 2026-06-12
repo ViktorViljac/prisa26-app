@@ -11,7 +11,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 // ─── CONFIG ──────────────────────────────────────────────────
-const SUPABASE_URL = 'https://xtpiykbtaqlemrjnvebq.supabase.co';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
 const SERVICE_ROLE_KEY = 'PASTE_YOUR_SERVICE_ROLE_KEY_HERE'; // ← get from Supabase Dashboard
 
 // ─── USERS TO IMPORT ─────────────────────────────────────────
