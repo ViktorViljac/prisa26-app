@@ -131,21 +131,16 @@ export default function IzazoviScreen() {
     ? challenges.filter(c => c.category_id === activeCategory)
     : challenges;
 
-  const completed = userChallenges.filter(uc => uc.is_completed).length;
+  const today = getLocalDateString();
+
+  const completed = userChallenges.filter(uc => uc.is_completed && uc.date === today).length;
 
   const getProgress = (challengeId) => {
-    const challenge = challenges.find(c => c.id === challengeId);
-    if (!challenge) return null;
-
-    if (challenge.is_daily) {
-      const today = getLocalDateString();
-      return userChallenges.find(u => u.challenge_id === challengeId && u.date === today) || null;
-    } else {
-      const ucs = userChallenges.filter(u => u.challenge_id === challengeId);
-      if (ucs.length === 0) return null;
-      return ucs.reduce((max, current) => (current.progress > max.progress ? current : max), ucs[0]);
-    }
+    // Always filter by today — each day is a fresh slate
+    // Non-daily challenges (e.g. photo) still reset per day
+    return userChallenges.find(u => u.challenge_id === challengeId && u.date === today) || null;
   };
+
 
   const handleSelfReport = async (challenge, fromCard = false) => {
     if (!profile) return;

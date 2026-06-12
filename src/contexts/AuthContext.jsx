@@ -16,6 +16,23 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single();
     if (!error && data) {
+      // Auto-reset streak if user missed a day
+      if (data.streak > 0 && data.last_active_date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const lastActive = new Date(data.last_active_date);
+        lastActive.setHours(0, 0, 0, 0);
+        const daysDiff = Math.floor((today - lastActive) / 86400000);
+        if (daysDiff > 1) {
+          // More than 1 day missed — reset streak
+          await supabase
+            .from('profiles')
+            .update({ streak: 0, updated_at: new Date().toISOString() })
+            .eq('id', userId);
+          data.streak = 0;
+        }
+      }
+
       setProfile(data);
       // Identify user in PostHog for analytics
       try {

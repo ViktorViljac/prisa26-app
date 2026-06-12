@@ -17,9 +17,11 @@ export default function LeaderboardScreen() {
   const { profile } = useAuth();
   const [leaderboard, setLeaderboard] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       const [lbRes, teamsRes] = await Promise.all([
         supabase.from('profiles').select('id, name, avatar_url, xp, level, streak, team_id, teams(name, color, icon)').eq('is_banned', false).eq('hide_from_leaderboard', false).order('xp', { ascending: false }).limit(50),
         supabase.from('teams').select('*'),
@@ -56,6 +58,7 @@ export default function LeaderboardScreen() {
         
         setTeams(aggregatedTeams);
       }
+      setLoading(false);
     };
     fetchData();
 
@@ -86,6 +89,12 @@ export default function LeaderboardScreen() {
 
   return (
     <div className="fade-in-content">
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+          <div className="loading-spinner" />
+        </div>
+      ) : (
+      <>
       {/* Podium */}
       {top3.length > 0 && (
         <div className="podium-section">
@@ -179,6 +188,8 @@ export default function LeaderboardScreen() {
             })}
           </div>
         </>
+      )}
+      </>
       )}
     </div>
   );
