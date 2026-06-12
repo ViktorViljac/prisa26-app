@@ -78,7 +78,7 @@ export default function HomeScreen({ onNavigate }) {
   const [countdown, setCountdown] = useState('');
   const [dailyQuote, setDailyQuote] = useState(null);
   const [levelInfo, setLevelInfo] = useState({ name: 'Početnik', icon: '🐣' });
-  const [achievementsRatio, setAchievementsRatio] = useState({ unlocked: 0, total: 0 });
+  const [challengesRatio, setChallengesRatio] = useState({ completed: 0, total: 0 });
   const [arenaEnabled, setArenaEnabled] = useState(false);
   const [showLevelProgression, setShowLevelProgression] = useState(false);
   const [greeting] = useState(() => getGreetingData());
@@ -177,23 +177,42 @@ export default function HomeScreen({ onNavigate }) {
         else setLevelInfo({ name: `Razina ${currentLevel}`, icon: '⭐' });
       }
 
-      // 3. Fetch achievements ratio (unlocked / total)
+      // 3. Fetch challenges ratio (completed / total)
       if (profile) {
-        // Fetch total achievements (where visibility is not 'hidden')
-        const { data: totalAch } = await supabase
-          .from('achievements')
-          .select('id')
-          .neq('visibility', 'hidden');
-        
-        // Fetch user's unlocked achievements
-        const { data: userAch } = await supabase
-          .from('user_achievements')
-          .select('achievement_id')
-          .eq('user_id', profile.id);
+        const todayStr = getLocalDateString();
+        const [chalRes, ucRes] = await Promise.all([
+          supabase
+            .from('challenges')
+            .select('id, is_daily')
+            .eq('visibility', 'visible'),
+          supabase
+            .from('user_challenges')
+            .select('challenge_id, is_completed, date')
+            .eq('user_id', profile.id)
+        ]);
 
-        const totalCount = totalAch ? totalAch.length : 0;
-        const unlockedCount = userAch ? userAch.length : 0;
-        setAchievementsRatio({ unlocked: unlockedCount, total: totalCount });
+        const activeChalsList = chalRes.data || [];
+        const userChalsList = ucRes.data || [];
+
+        // Denominator: all visible daily challenges + visible non-daily challenges that are NOT completed yet, OR completed today
+        const activeChallengesToday = activeChalsList.filter(c => {
+          if (c.is_daily) return true;
+          const completedRecord = userChalsList.find(uc => uc.challenge_id === c.id && uc.is_completed);
+          if (!completedRecord) return true;
+          return completedRecord.date === todayStr;
+        });
+
+        const totalVisible = activeChallengesToday.length;
+
+        // Numerator: completed today (either a daily challenge completed today, or a non-daily challenge completed today)
+        const completedTodayIds = new Set(
+          userChalsList
+            .filter(uc => uc.is_completed && uc.date === todayStr && activeChalsList.some(vc => vc.id === uc.challenge_id))
+            .map(uc => uc.challenge_id)
+        );
+        const completed = completedTodayIds.size;
+
+        setChallengesRatio({ completed, total: totalVisible });
       }
 
       // 4. Fetch Arena Enabled setting
@@ -217,7 +236,14 @@ export default function HomeScreen({ onNavigate }) {
   const stats = [
     { icon: <LocalFireDepartmentIcon />, value: `${profile?.streak || 0} 🔥`, label: 'Vatrice', bg: '#fff0eb', color: '#f07147' },
     { icon: <span>{levelInfo.icon}</span>, value: levelInfo.name, label: `Razina ${level}`, bg: '#dbeafe', color: '#3b82f6', isLevel: true },
-    { icon: <EmojiEventsIcon />, value: `${achievementsRatio.unlocked} / ${achievementsRatio.total}`, label: 'Postignuća', bg: '#ccfbf1', color: '#0d9488' },
+    { 
+      icon: <EmojiEventsIcon />, 
+      value: `${challengesRatio.completed} / ${challengesRatio.total}`, 
+      label: 'Izazovi', 
+      bg: '#ccfbf1', 
+      color: '#0d9488',
+      onClick: () => onNavigate(1)
+    },
     { icon: <BoltIcon />, value: `${profile?.xp || 0} ⚡`, label: 'Ukupno XP', bg: '#ffedd5', color: '#f07147' },
   ];
 
@@ -313,18 +339,18 @@ export default function HomeScreen({ onNavigate }) {
           <div 
             key={i} 
             className="stat-tile"
-            onClick={s.isLevel ? () => setShowLevelProgression(true) : undefined}
-            style={s.isLevel ? { 
+            onClick={s.isLevel ? () => setShowLevelProgression(true) : s.onClick}
+            style={s.isLevel || s.onClick ? { 
               cursor: 'pointer', 
-              border: '1.5px solid var(--prisa-orange)', 
-              boxShadow: '0 4px 12px rgba(240, 113, 71, 0.12)',
+              border: s.isLevel ? '1.5px solid var(--prisa-orange)' : '1.5px solid #0d9488', 
+              boxShadow: s.isLevel ? '0 4px 12px rgba(240, 113, 71, 0.12)' : '0 4px 12px rgba(13, 148, 136, 0.12)',
               transition: 'transform 0.2s var(--ease)'
             } : {}}
             onMouseEnter={(e) => {
-              if (s.isLevel) e.currentTarget.style.transform = 'translateY(-2px)';
+              if (s.isLevel || s.onClick) e.currentTarget.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
-              if (s.isLevel) e.currentTarget.style.transform = 'none';
+              if (s.isLevel || s.onClick) e.currentTarget.style.transform = 'none';
             }}
           >
             <div className="stat-tile-icon" style={{ background: s.bg, color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

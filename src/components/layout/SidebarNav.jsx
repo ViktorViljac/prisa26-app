@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: 'Navike', icon: EmojiEventsIcon, index: 1 },
   { label: 'Arena', icon: SportsKabaddiIcon, index: 2, isArena: true },
   { label: 'Liderbord', icon: LeaderboardIcon, index: 3 },
-  { label: 'Izazovi', icon: MilitaryTechIcon, index: 4 },
+  { label: 'Postignuća', icon: MilitaryTechIcon, index: 4 },
   { label: 'Profil', icon: PersonIcon, index: 5 },
 ];
 
