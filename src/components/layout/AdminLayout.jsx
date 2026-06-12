@@ -9,9 +9,12 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
+import BarChartIcon from '@mui/icons-material/BarChart';
 
 const NAV_ITEMS = [
   { label: 'Nadzorna ploča', path: 'dashboard', icon: DashboardIcon },
+  { label: 'Predaje (Foto/Tekst)', path: 'submissions', icon: PhotoLibraryIcon },
   { label: 'Korisnici', path: 'users', icon: PeopleIcon },
   { label: 'Navike', path: 'challenges', icon: EmojiEventsIcon },
   { label: 'Izazovi', path: 'achievements', icon: MilitaryTechIcon },
@@ -59,6 +62,16 @@ export default function AdminLayout() {
         </nav>
 
         <div style={{ padding: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <a
+            href="https://eu.posthog.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="admin-nav-item"
+            style={{ color: '#a78bfa', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}
+          >
+            <BarChartIcon />
+            PostHog Analitika
+          </a>
           <button
             className="admin-nav-item"
             onClick={() => navigate('/')}

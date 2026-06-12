@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import posthog from 'posthog-js';
 
 const AuthContext = createContext(null);
 
@@ -16,6 +17,17 @@ export function AuthProvider({ children }) {
       .single();
     if (!error && data) {
       setProfile(data);
+      // Identify user in PostHog for analytics
+      try {
+        posthog.identify(data.id, {
+          name: data.name,
+          email: data.email,
+          level: data.level,
+          xp: data.xp,
+          team: data.teams?.name || null,
+          role: data.role,
+        });
+      } catch (_) { /* PostHog not initialized */ }
     }
     return data;
   }, []);
@@ -72,6 +84,7 @@ export function AuthProvider({ children }) {
     if (error) throw error;
     setUser(null);
     setProfile(null);
+    try { posthog.reset(); } catch (_) { /* PostHog not initialized */ }
   };
 
   const refreshProfile = async () => {
