@@ -32,8 +32,7 @@ export default function AdminSubmissions() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch all submissions that have proof_url OR field-input text
-      // We include both photo and field_input types
+      // Fetch all submissions
       const { data, error } = await supabase
         .from('user_challenges')
         .select(`
@@ -49,11 +48,15 @@ export default function AdminSubmissions() {
           profiles (id, name, avatar_url, email),
           challenges (id, title, description, xp_reward, verification_type, target_count, unit)
         `)
-        .not('proof_url', 'is', null)
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setSubmissions(data);
+        // Only keep submissions that have a photo proof OR are field_input submissions
+        const filteredData = data.filter(item => 
+          item.proof_url !== null || 
+          item.challenges?.verification_type === 'field_input'
+        );
+        setSubmissions(filteredData);
       }
 
       // Also fetch all challenges with photo or field_input verification for filter

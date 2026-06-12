@@ -123,37 +123,53 @@ export default function LeaderboardScreen() {
         <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, margin: '24px 0 16px 0', color: 'var(--text-dark)' }}>
           👥 Ukupni poredak
         </h3>
-        {leaderboard.map((user, i) => {
-          const rank = i + 1;
-          const isMe = user.id === profile?.id;
-          const avatarLetter = user.name?.charAt(0)?.toUpperCase() || '?';
-          return (
-            <div key={user.id} className={`rank-card hover-scale ${isMe ? 'me' : ''}`}>
-              <div className="rank-number" style={rank <= 3 ? { color: 'var(--prisa-orange)', fontWeight: 900 } : {}}>
-                {rank <= 3 ? MEDALS[rank - 1] : `${rank}.`}
-              </div>
-              <div className="rank-avatar">
-                {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
-              </div>
-              <div className="rank-info">
-                <div className="rank-name">{formatName(user.name)}{isMe && ' (ti)'}</div>
-              </div>
-              <div className="rank-team-col">
-                <div 
-                  className="rank-team-badge"
-                  style={{
-                    color: user.teams?.color || 'var(--text-muted)',
-                    backgroundColor: user.teams ? `${user.teams.color}15` : 'rgba(0,0,0,0.04)',
-                    border: `1px solid ${user.teams ? `${user.teams.color}30` : 'rgba(0,0,0,0.08)'}`
-                  }}
-                >
-                  {user.teams ? `${user.teams.icon || '🏳️'} ${user.teams.name}` : 'Bez tima'}
+        {leaderboard.length === 0 ? (
+          <div style={{
+            background: '#ffffff',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '32px 20px',
+            textAlign: 'center',
+            color: 'var(--text-muted)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🏆</div>
+            <div style={{ fontWeight: 800, color: 'var(--text-dark)', marginBottom: '4px' }}>Tablica je trenutno prazna</div>
+            <div style={{ fontSize: '0.85rem' }}>Budi prvi koji će osvojiti XP i preuzeti vodstvo! 🚀</div>
+          </div>
+        ) : (
+          leaderboard.map((user, i) => {
+            const rank = i + 1;
+            const isMe = user.id === profile?.id;
+            const avatarLetter = user.name?.charAt(0)?.toUpperCase() || '?';
+            return (
+              <div key={user.id} className={`rank-card hover-scale ${isMe ? 'me' : ''}`}>
+                <div className="rank-number" style={rank <= 3 ? { color: 'var(--prisa-orange)', fontWeight: 900 } : {}}>
+                  {rank <= 3 ? MEDALS[rank - 1] : `${rank}.`}
                 </div>
+                <div className="rank-avatar">
+                  {user.avatar_url ? <img src={user.avatar_url} alt={user.name} /> : avatarLetter}
+                </div>
+                <div className="rank-info">
+                  <div className="rank-name">{formatName(user.name)}{isMe && ' (ti)'}</div>
+                </div>
+                <div className="rank-team-col">
+                  <div 
+                    className="rank-team-badge"
+                    style={{
+                      color: user.teams?.color || 'var(--text-muted)',
+                      backgroundColor: user.teams ? `${user.teams.color}15` : 'rgba(0,0,0,0.04)',
+                      border: `1px solid ${user.teams ? `${user.teams.color}30` : 'rgba(0,0,0,0.08)'}`
+                    }}
+                  >
+                    {user.teams ? `${user.teams.icon || '🏳️'} ${user.teams.name}` : 'Bez tima'}
+                  </div>
+                </div>
+                <div className="rank-points">{user.xp} XP</div>
               </div>
-              <div className="rank-points">{user.xp} XP</div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {/* Teams */}

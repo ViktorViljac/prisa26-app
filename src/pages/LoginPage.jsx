@@ -71,7 +71,8 @@ export default function LoginPage() {
               width: 100,
               height: 100,
               objectFit: 'contain',
-              marginBottom: 12,
+              display: 'block',
+              margin: '0 auto 12px',
             }}
           />
           <div className="login-logo-title">PRIŠA</div>

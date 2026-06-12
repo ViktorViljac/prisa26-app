@@ -217,7 +217,7 @@ export default function HomeScreen({ onNavigate }) {
   const stats = [
     { icon: <LocalFireDepartmentIcon />, value: `${profile?.streak || 0} 🔥`, label: 'Vatrice', bg: '#fff0eb', color: '#f07147' },
     { icon: <span>{levelInfo.icon}</span>, value: levelInfo.name, label: `Razina ${level}`, bg: '#dbeafe', color: '#3b82f6', isLevel: true },
-    { icon: <EmojiEventsIcon />, value: `${achievementsRatio.unlocked} / ${achievementsRatio.total}`, label: 'Izazovi', bg: '#ccfbf1', color: '#0d9488' },
+    { icon: <EmojiEventsIcon />, value: `${achievementsRatio.unlocked} / ${achievementsRatio.total}`, label: 'Postignuća', bg: '#ccfbf1', color: '#0d9488' },
     { icon: <BoltIcon />, value: `${profile?.xp || 0} ⚡`, label: 'Ukupno XP', bg: '#ffedd5', color: '#f07147' },
   ];
 

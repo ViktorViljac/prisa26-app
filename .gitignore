@@ -27,3 +27,6 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Camp credentials output
+scripts/camp_credentials_output.csv

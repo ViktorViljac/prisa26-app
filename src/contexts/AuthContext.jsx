@@ -20,7 +20,8 @@ export function AuthProvider({ children }) {
       if (data.streak > 0 && data.last_active_date) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const lastActive = new Date(data.last_active_date);
+        const parts = data.last_active_date.split('-');
+        const lastActive = new Date(parts[0], parts[1] - 1, parts[2]);
         lastActive.setHours(0, 0, 0, 0);
         const daysDiff = Math.floor((today - lastActive) / 86400000);
         if (daysDiff > 1) {

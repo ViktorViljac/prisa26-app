@@ -133,21 +133,44 @@ export default function IzazoviScreen() {
 
   const today = getLocalDateString();
 
-  // Count unique VISIBLE challenges completed today (deduplicated by challenge_id)
-  const visibleChallengeIds = new Set(
-    challenges.filter(c => c.visibility === 'visible').map(c => c.id)
-  );
+  // Count completed / total challenges dynamically
+  const visibleChallenges = challenges.filter(c => c.visibility === 'visible');
+
+  // Denominator: all visible daily challenges + visible non-daily challenges that are NOT completed yet, OR completed today
+  const activeChallengesToday = visibleChallenges.filter(c => {
+    if (c.is_daily) return true;
+    const completedRecord = userChallenges.find(uc => uc.challenge_id === c.id && uc.is_completed);
+    if (!completedRecord) return true;
+    return completedRecord.date === today;
+  });
+
+  const totalVisible = activeChallengesToday.length;
+
+  // Numerator: completed today (either a daily challenge completed today, or a non-daily challenge completed today)
   const completedTodayIds = new Set(
     userChallenges
-      .filter(uc => uc.is_completed && uc.date === today && visibleChallengeIds.has(uc.challenge_id))
+      .filter(uc => uc.is_completed && uc.date === today && visibleChallenges.some(vc => vc.id === uc.challenge_id))
       .map(uc => uc.challenge_id)
   );
   const completed = completedTodayIds.size;
-  const totalVisible = visibleChallengeIds.size;
 
   const getProgress = (challengeId) => {
-    // Always filter by today — each day is a fresh slate
-    return userChallenges.find(u => u.challenge_id === challengeId && u.date === today) || null;
+    const chal = challenges.find(c => c.id === challengeId);
+    if (!chal) return null;
+    
+    if (chal.is_daily) {
+      // Daily challenge — progress is only for today
+      return userChallenges.find(u => u.challenge_id === challengeId && u.date === today) || null;
+    } else {
+      // One-time challenge — find the latest progress record across all days
+      const records = userChallenges.filter(u => u.challenge_id === challengeId);
+      if (records.length === 0) return null;
+      // If any record is completed, return that one
+      const completedRecord = records.find(u => u.is_completed);
+      if (completedRecord) return completedRecord;
+      // Otherwise return the one with the maximum progress, or the latest one
+      return records.sort((a, b) => b.progress - a.progress)[0];
+    }
   };
 
   const handleSelfReport = async (challenge, fromCard = false) => {
@@ -164,6 +187,7 @@ export default function IzazoviScreen() {
       const newProgress = Math.min(prevProgress + 1, challenge.target_count);
       const isDone = newProgress >= challenge.target_count;
       const prevLevel = Math.floor((profile.xp || 0) / 500) + 1;
+      const dateToUse = challenge.is_daily ? today : (existing?.date || today);
 
       const { error } = await supabase.from('user_challenges').upsert({
         user_id: profile.id,
@@ -171,7 +195,7 @@ export default function IzazoviScreen() {
         progress: newProgress,
         is_completed: isDone,
         completed_at: isDone ? new Date().toISOString() : null,
-        date: today,
+        date: dateToUse,
       }, { onConflict: 'user_id,challenge_id,date' });
 
       if (!error) {
@@ -255,6 +279,7 @@ export default function IzazoviScreen() {
       const prevProgress = existing?.progress || 0;
       const newProgress = Math.min(prevProgress + numVal, challenge.target_count);
       const isDone = newProgress >= challenge.target_count;
+      const dateToUse = challenge.is_daily ? today : (existing?.date || today);
 
       await supabase.from('user_challenges').upsert({
         user_id: profile.id,
@@ -262,7 +287,7 @@ export default function IzazoviScreen() {
         progress: newProgress,
         is_completed: isDone,
         completed_at: isDone ? new Date().toISOString() : null,
-        date: today,
+        date: dateToUse,
       }, { onConflict: 'user_id,challenge_id,date' });
 
       const increment = newProgress - prevProgress;
@@ -338,6 +363,7 @@ export default function IzazoviScreen() {
 
       const existing = getProgress(challenge.id);
       const newProgress = Math.min((existing?.progress || 0) + 1, challenge.target_count);
+      const dateToUse = challenge.is_daily ? today : (existing?.date || today);
 
       const { error: upsertError } = await supabase.from('user_challenges').upsert({
         user_id: profile.id,
@@ -345,7 +371,7 @@ export default function IzazoviScreen() {
         progress: newProgress,
         is_completed: false, // Pending admin approval
         proof_url: publicUrl,
-        date: today,
+        date: dateToUse,
       }, { onConflict: 'user_id,challenge_id,date' });
 
       if (upsertError) {
@@ -407,7 +433,11 @@ export default function IzazoviScreen() {
       {/* Header */}
       <div className="challenges-header">
         <div className="challenges-count">
-          <span>{completed}</span> / {totalVisible} odrađenih navika
+          {totalVisible > 0 ? (
+            <><span>{completed}</span> / {totalVisible} odrađenih navika</>
+          ) : (
+            <span>Nema aktivnih navika za danas</span>
+          )}
         </div>
       </div>
 

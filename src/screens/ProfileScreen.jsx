@@ -201,7 +201,7 @@ export default function ProfileScreen({ onLogout }) {
       await refreshProfile();
       
       if (isCompletingFirstTime) {
-        setSaveSuccess('🎉 Podaci spremljeni! Osvojeno +100 XP za profil i tim!');
+        setSaveSuccess('🎉 Podaci spremljeni! Osvojeno +50 XP za profil i tim!');
       } else {
         setSaveSuccess('✅ Osobni podaci uspješno spremljeni!');
       }
@@ -339,7 +339,7 @@ export default function ProfileScreen({ onLogout }) {
           border: '1px solid rgba(240, 113, 71, 0.2)',
           lineHeight: 1.4
         }}>
-          🎁 Popuni sve obvezne podatke (Dob, Spol, Grad, Škola/Fakultet) za nagradu od +100 XP!
+          🎁 Popuni sve obvezne podatke (Dob, Spol, Grad, Škola/Fakultet) za nagradu od +50 XP!
         </div>
       )}
 
