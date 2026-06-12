@@ -72,9 +72,37 @@ export function AuthProvider({ children }) {
         setLoading(false);
       }
     );
-
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
+
+  // Subscribe to real-time changes on the current user's profile
+  useEffect(() => {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
+
+    const channelId = `profile-realtime-${user.id}`;
+    const channel = supabase
+      .channel(channelId)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        async () => {
+          await fetchProfile(user.id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchProfile]);
 
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
