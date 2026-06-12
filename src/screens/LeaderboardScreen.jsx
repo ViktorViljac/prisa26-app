@@ -20,8 +20,8 @@ export default function LeaderboardScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const fetchData = async (showSpinner = false) => {
+      if (showSpinner) setLoading(true);
       const [lbRes, teamsRes] = await Promise.all([
         supabase.from('profiles').select('id, name, avatar_url, xp, level, streak, team_id, teams(name, color, icon)').eq('is_banned', false).eq('hide_from_leaderboard', false).order('xp', { ascending: false }).order('name', { ascending: true }).limit(50),
         supabase.from('teams').select('*'),
@@ -63,7 +63,7 @@ export default function LeaderboardScreen() {
       }
       setLoading(false);
     };
-    fetchData();
+    fetchData(true);
 
     // Realtime subscription - using a unique random suffix to avoid channel reuse conflicts
     const randomSuffix = Math.random().toString(36).slice(2, 11);
@@ -71,7 +71,7 @@ export default function LeaderboardScreen() {
     const channel = supabase
       .channel(channelId)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
-        fetchData();
+        fetchData(false);
       })
       .subscribe();
 
