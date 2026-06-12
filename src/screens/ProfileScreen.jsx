@@ -91,7 +91,7 @@ export default function ProfileScreen({ onLogout }) {
     touchDeltaX.current = 0;
   }, [subPage]);
 
-  const level = Math.floor((profile?.xp || 0) / 500) + 1;
+  const level = profile?.level || 1;
   const avatarLetter = profile?.name?.charAt(0)?.toUpperCase() || '?';
 
   useEffect(() => {

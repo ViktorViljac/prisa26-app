@@ -186,7 +186,7 @@ export default function IzazoviScreen() {
       const prevProgress = existing?.progress || 0;
       const newProgress = Math.min(prevProgress + 1, challenge.target_count);
       const isDone = newProgress >= challenge.target_count;
-      const prevLevel = Math.floor((profile.xp || 0) / 500) + 1;
+      const prevLevel = profile?.level || 1;
       const dateToUse = challenge.is_daily ? today : (existing?.date || today);
 
       const { error } = await supabase.from('user_challenges').upsert({
@@ -242,7 +242,7 @@ export default function IzazoviScreen() {
         // Detect level up
         const freshProfile = await supabase.from('profiles').select('xp, level').eq('id', profile.id).single();
         if (freshProfile.data) {
-          const newLevel = Math.floor((freshProfile.data.xp || 0) / 500) + 1;
+          const newLevel = freshProfile.data.level || 1;
           if (newLevel > prevLevel) {
             posthog.capture('level_up', {
               level_from: prevLevel,

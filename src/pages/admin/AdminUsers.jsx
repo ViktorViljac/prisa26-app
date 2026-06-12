@@ -8,6 +8,7 @@ import EditIcon from '@mui/icons-material/Edit';
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [levels, setLevels] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
@@ -21,16 +22,25 @@ export default function AdminUsers() {
     team_id: '',
   });
 
+  const calculateLevel = (xpVal) => {
+    if (levels.length === 0) return Math.floor(xpVal / 500) + 1;
+    const sorted = [...levels].sort((a, b) => b.level - a.level);
+    const match = sorted.find(l => (l.xp || 0) <= xpVal);
+    return match ? match.level : 1;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, teamsRes] = await Promise.all([
+      const [usersRes, teamsRes, levelsRes] = await Promise.all([
         supabase.from('profiles').select('*, teams(name, icon)').order('xp', { ascending: false }),
         supabase.from('teams').select('*').order('name'),
+        supabase.from('levels').select('*').order('level', { ascending: true }),
       ]);
 
       if (usersRes.data) setUsers(usersRes.data);
       if (teamsRes.data) setTeams(teamsRes.data);
+      if (levelsRes.data) setLevels(levelsRes.data);
     } catch (err) {
       console.error('Error fetching users:', err);
     } finally {
@@ -59,7 +69,7 @@ export default function AdminUsers() {
     setUpdatingId(selectedUser.id);
     try {
       const newXp = parseInt(detailForm.xp) || 0;
-      const newLevel = Math.floor(newXp / 500) + 1;
+      const newLevel = calculateLevel(newXp);
 
       const { error } = await supabase
         .from('profiles')
@@ -279,7 +289,7 @@ export default function AdminUsers() {
                   min={0}
                 />
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                  Razina se automatski preračunava (Svakih 500 XP = 1 razina). Trenutna razina: {Math.floor(detailForm.xp / 500) + 1}
+                  Razina se automatski preračunava na temelju bodova. Trenutna razina: {calculateLevel(detailForm.xp)}
                 </span>
               </div>
 

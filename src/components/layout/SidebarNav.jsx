@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import HomeIcon from '@mui/icons-material/Home';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -19,11 +21,36 @@ const NAV_ITEMS = [
 
 export default function SidebarNav({ navValue, setNavValue, onLogout, onAdmin, arenaEnabled }) {
   const { profile, isAdmin } = useAuth();
+  const [progression, setProgression] = useState({ xpIntoLevel: 0, xpForNext: 500 });
 
-  const xpIntoLevel = profile ? (profile.xp % 500) : 0;
-  const xpForNext = 500;
-  const level = profile ? Math.floor(profile.xp / 500) + 1 : 1;
+  const level = profile?.level || 1;
+  const xpIntoLevel = progression.xpIntoLevel;
+  const xpForNext = progression.xpForNext;
   const avatarLetter = profile?.name?.charAt(0)?.toUpperCase() || '?';
+
+  useEffect(() => {
+    if (!profile) return;
+    async function fetchLevelProgress() {
+      const { data: levels } = await supabase
+        .from('levels')
+        .select('level, xp')
+        .order('level', { ascending: true });
+      if (levels) {
+        const currentLvlInfo = levels.find(l => l.level === level) || { xp: (level - 1) * 500 };
+        const nextLvlInfo = levels.find(l => l.level === level + 1) || { xp: (currentLvlInfo.xp || 0) + 500 };
+
+        const currentThreshold = currentLvlInfo.xp || 0;
+        const nextThreshold = nextLvlInfo.xp || 500;
+
+        const totalXp = profile.xp || 0;
+        setProgression({
+          xpIntoLevel: Math.max(0, totalXp - currentThreshold),
+          xpForNext: Math.max(1, nextThreshold - currentThreshold)
+        });
+      }
+    }
+    fetchLevelProgress();
+  }, [profile, level]);
 
   return (
     <aside className="sidebar">

@@ -14,6 +14,7 @@ export default function AdminLevels() {
     level: 1,
     name: '',
     icon: '⭐',
+    xp: 0,
   });
 
   const fetchLevels = async () => {
@@ -41,7 +42,7 @@ export default function AdminLevels() {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: name === 'level' ? parseInt(value) || 1 : value,
+      [name]: (name === 'level' || name === 'xp') ? parseInt(value) || 0 : value,
     }));
   };
 
@@ -52,6 +53,7 @@ export default function AdminLevels() {
       level: lvl.level,
       name: lvl.name || '',
       icon: lvl.icon || '⭐',
+      xp: lvl.xp || 0,
     });
   };
 
@@ -64,6 +66,7 @@ export default function AdminLevels() {
       level: maxLevel + 1,
       name: '',
       icon: '⭐',
+      xp: maxLevel * 500,
     });
   };
 
@@ -79,6 +82,7 @@ export default function AdminLevels() {
           .update({
             name: form.name,
             icon: form.icon,
+            xp: form.xp,
           })
           .eq('level', editingLevel.level);
 
@@ -100,6 +104,7 @@ export default function AdminLevels() {
               level: form.level,
               name: form.name,
               icon: form.icon,
+              xp: form.xp,
             },
           ]);
 
@@ -196,6 +201,18 @@ export default function AdminLevels() {
                   placeholder="npr. 🌌"
                 />
               </div>
+
+              <div className="form-group" style={{ maxWidth: 200 }}>
+                <label>XP Prag (Uvjet) *</label>
+                <input
+                  type="number"
+                  name="xp"
+                  value={form.xp}
+                  onChange={handleInputChange}
+                  required
+                  min={0}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
@@ -242,7 +259,7 @@ export default function AdminLevels() {
                   {l.name}
                 </td>
                 <td style={{ color: 'var(--text-gray)' }}>
-                  {(l.level - 1) * 500} XP
+                  {l.xp !== undefined && l.xp !== null ? l.xp : (l.level - 1) * 500} XP
                 </td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>

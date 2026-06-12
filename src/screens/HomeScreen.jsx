@@ -84,10 +84,12 @@ export default function HomeScreen({ onNavigate }) {
   const [greeting] = useState(() => getGreetingData());
   const [progressPct, setProgressPct] = useState(0);
 
+  const [progression, setProgression] = useState({ xpIntoLevel: 0, xpForNext: 500 });
+
   const totalXp = profile?.xp || 0;
-  const level = Math.floor(totalXp / 500) + 1;
-  const xpIntoLevel = totalXp % 500;
-  const xpForNext = 500;
+  const level = profile?.level || 1;
+  const xpIntoLevel = progression.xpIntoLevel;
+  const xpForNext = progression.xpForNext;
 
   // Mount animation
   useEffect(() => {
@@ -169,12 +171,29 @@ export default function HomeScreen({ onNavigate }) {
       if (quote) setDailyQuote(quote);
 
       // 2. Fetch custom levels
-      const currentLevel = Math.floor((profile?.xp || 0) / 500) + 1;
-      const { data: levels } = await supabase.from('levels').select('*');
+      const currentLevel = profile?.level || 1;
+      const { data: levels } = await supabase
+        .from('levels')
+        .select('*')
+        .order('level', { ascending: true });
       if (levels) {
         const match = levels.find(l => l.level === currentLevel);
         if (match) setLevelInfo(match);
-        else setLevelInfo({ name: `Razina ${currentLevel}`, icon: '⭐' });
+        else setLevelInfo({ name: `Razina ${currentLevel}`, icon: '⭐', xp: (currentLevel - 1) * 500 });
+
+        const currentLvlInfo = levels.find(l => l.level === currentLevel) || { xp: (currentLevel - 1) * 500 };
+        const nextLvlInfo = levels.find(l => l.level === currentLevel + 1) || { xp: (currentLvlInfo.xp || 0) + 500 };
+
+        const currentThreshold = currentLvlInfo.xp || 0;
+        const nextThreshold = nextLvlInfo.xp || 500;
+
+        const calculatedXpIntoLevel = Math.max(0, totalXp - currentThreshold);
+        const calculatedXpForNext = Math.max(1, nextThreshold - currentThreshold);
+
+        setProgression({
+          xpIntoLevel: calculatedXpIntoLevel,
+          xpForNext: calculatedXpForNext
+        });
       }
 
       // 3. Fetch challenges ratio (completed / total)
