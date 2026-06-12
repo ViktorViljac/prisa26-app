@@ -17,6 +17,9 @@ const INITIAL_FORM = {
   end_date: '',
   is_daily: false,
   input_question: '',
+  active_from_time: '',
+  active_to_time: '',
+  auto_complete_on_open: false,
 };
 
 export default function AdminChallenges() {
@@ -79,6 +82,9 @@ export default function AdminChallenges() {
         start_date: form.start_date || null,
         end_date: form.end_date || null,
         input_question: form.verification_type === 'field_input' ? form.input_question : null,
+        active_from_time: form.active_from_time || null,
+        active_to_time: form.active_to_time || null,
+        auto_complete_on_open: form.auto_complete_on_open || false,
       };
 
       if (editingId) {
@@ -117,6 +123,9 @@ export default function AdminChallenges() {
       end_date: challenge.end_date || '',
       is_daily: challenge.is_daily || false,
       input_question: challenge.input_question || '',
+      active_from_time: challenge.active_from_time || '',
+      active_to_time: challenge.active_to_time || '',
+      auto_complete_on_open: challenge.auto_complete_on_open || false,
     });
     setEditingId(challenge.id);
     setShowForm(true);
@@ -357,6 +366,41 @@ export default function AdminChallenges() {
               </div>
             </div>
 
+            <div className="admin-form-row">
+              <div className="form-group">
+                <label>Aktivno Od (vrijeme, opcionalno)</label>
+                <input
+                  type="time"
+                  name="active_from_time"
+                  value={form.active_from_time}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Aktivno Do (vrijeme, opcionalno)</label>
+                <input
+                  type="time"
+                  name="active_to_time"
+                  value={form.active_to_time}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  name="auto_complete_on_open"
+                  checked={form.auto_complete_on_open}
+                  onChange={handleInputChange}
+                  style={{ width: 20, height: 20 }}
+                />
+                Automatski dovrši pri otvaranju aplikacije u zadanom vremenskom prozoru (npr. za "Probudi se do 9:00")
+              </label>
+            </div>
+
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
               <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px' }}>
                 {editingId ? 'Spremi Izmjene' : 'Stvori Izazov'}
@@ -400,6 +444,12 @@ export default function AdminChallenges() {
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-gray)', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {c.description || 'Nema opisa.'}
                   </div>
+                  {c.active_from_time && c.active_to_time && (
+                    <div style={{ fontSize: '0.7rem', color: '#d97706', fontWeight: 600, marginTop: 2 }}>
+                      ⏱️ {c.active_from_time.substring(0, 5)} - {c.active_to_time.substring(0, 5)}
+                      {c.auto_complete_on_open && ' (Auto-dovrši)'}
+                    </div>
+                  )}
                 </td>
                 <td>
                   <span

@@ -76,6 +76,22 @@ const getLocalDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
+const checkTimeWindow = (from, to) => {
+  if (!from || !to) return true;
+  const localTime = new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'Europe/Zagreb' });
+  if (from <= to) {
+    return (localTime >= from && localTime <= to);
+  } else {
+    return (localTime >= from || localTime <= to);
+  }
+};
+
+const formatTime = (timeStr) => {
+  if (!timeStr) return '';
+  const parts = timeStr.split(':');
+  return `${parts[0]}:${parts[1]}`;
+};
+
 export default function IzazoviScreen() {
   const { profile, refreshProfile } = useAuth();
   const [categories, setCategories] = useState([]);
@@ -103,6 +119,54 @@ export default function IzazoviScreen() {
       if (catRes.data) setCategories(catRes.data);
       if (chalRes.data) setChallenges(chalRes.data);
       if (ucRes.data) setUserChallenges(ucRes.data);
+
+      // Auto-complete challenges that are due
+      if (profile && chalRes.data && ucRes.data) {
+        const todayStr = getLocalDateString();
+        const localTime = new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'Europe/Zagreb' });
+        let didAutoCompleteAny = false;
+
+        for (const chal of chalRes.data) {
+          if (chal.auto_complete_on_open && chal.active_from_time && chal.active_to_time) {
+            const alreadyCompleted = ucRes.data.some(uc => uc.challenge_id === chal.id && uc.is_completed && uc.date === todayStr);
+            if (!alreadyCompleted) {
+              const from = chal.active_from_time;
+              const to = chal.active_to_time;
+              let inTimeWindow = false;
+              if (from <= to) {
+                inTimeWindow = (localTime >= from && localTime <= to);
+              } else {
+                inTimeWindow = (localTime >= from || localTime <= to);
+              }
+
+              if (inTimeWindow) {
+                console.log(`Auto-completing in IzazoviScreen: ${chal.title}`);
+                await supabase.from('user_challenges').upsert({
+                  user_id: profile.id,
+                  challenge_id: chal.id,
+                  progress: chal.target_count || 1,
+                  is_completed: true,
+                  completed_at: new Date().toISOString(),
+                  date: todayStr
+                }, { onConflict: 'user_id,challenge_id,date' });
+
+                await supabase.rpc('award_xp', {
+                  p_user_id: profile.id,
+                  p_xp_amount: (chal.xp_reward || 10) * (chal.target_count || 1)
+                });
+
+                didAutoCompleteAny = true;
+              }
+            }
+          }
+        }
+
+        if (didAutoCompleteAny) {
+          await refreshProfile();
+          const { data: freshUc } = await supabase.from('user_challenges').select('*').eq('user_id', profile.id);
+          if (freshUc) setUserChallenges(freshUc);
+        }
+      }
     };
     fetchData();
   }, [profile]);
@@ -563,6 +627,7 @@ export default function IzazoviScreen() {
           const isSelfReport = verifyType === 'self_report' || !challenge.verification_type;
           const isTapping = tappingId === challenge.id;
           const isJustDone = justDoneId === challenge.id;
+          const isTimeValid = checkTimeWindow(challenge.active_from_time, challenge.active_to_time);
 
           return (
             <div
@@ -612,24 +677,44 @@ export default function IzazoviScreen() {
                   <span className="challenge-progress-text">{progress} / {challenge.target_count} {challenge.unit || ''}</span>
                   <span className="challenge-xp-badge">⚡ {challenge.xp_reward} XP</span>
                 </div>
+                {challenge.active_from_time && challenge.active_to_time && (
+                  <div className={`challenge-time-limit ${isTimeValid ? 'active' : 'locked'}`} style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    marginTop: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    color: isTimeValid ? '#10b981' : '#f59e0b'
+                  }}>
+                    ⏱️ {isTimeValid ? 'Dostupno još' : 'Dostupno'} od {formatTime(challenge.active_from_time)} do {formatTime(challenge.active_to_time)}
+                  </div>
+                )}
               </div>
 
               {/* One-tap button for self_report challenges */}
               {isSelfReport && !isDone && (
                 <button
                   className={`card-tap-btn ${isTapping ? 'tapping' : ''} ${isJustDone ? 'just-done' : ''}`}
-                  style={{ background: `linear-gradient(135deg, ${gradStart}, ${gradEnd})` }}
+                  style={{
+                    background: isTimeValid ? `linear-gradient(135deg, ${gradStart}, ${gradEnd})` : '#e2e8f0',
+                    color: isTimeValid ? '#fff' : '#94a3b8',
+                    cursor: isTimeValid ? 'pointer' : 'not-allowed'
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (!isTimeValid) return;
                     if (!isTapping) handleSelfReport(challenge, true);
                   }}
-                  disabled={isTapping}
+                  disabled={isTapping || !isTimeValid}
                   aria-label="Zabilježi napredak"
                 >
                   {isTapping ? (
                     <span className="loading-spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
                   ) : isJustDone ? (
                     <CheckCircleIcon style={{ fontSize: 22 }} />
+                  ) : !isTimeValid ? (
+                    <span>🔒</span>
                   ) : (
                     <span className="card-tap-plus">+1</span>
                   )}
@@ -683,6 +768,21 @@ export default function IzazoviScreen() {
             {/* Self Report challenges complete directly on the card — no drawer needed */}
 
 
+            {selectedChallenge.active_from_time && selectedChallenge.active_to_time && !checkTimeWindow(selectedChallenge.active_from_time, selectedChallenge.active_to_time) && (
+              <div style={{
+                background: '#fef3c7',
+                color: '#d97706',
+                padding: '10px 12px',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                marginBottom: 16,
+                border: '1px solid #fde68a'
+              }}>
+                ⚠️ Navika je zaključana. Možeš je izvršiti samo u vremenu od {formatTime(selectedChallenge.active_from_time)} do {formatTime(selectedChallenge.active_to_time)}.
+              </div>
+            )}
+
             {/* Field Input */}
             {selectedChallenge.verification_type === 'field_input' && (
               <div className="challenge-field-input">
@@ -696,12 +796,13 @@ export default function IzazoviScreen() {
                     onChange={e => setFieldValue(e.target.value)}
                     placeholder={`npr. ${selectedChallenge.target_count}`}
                     min="1"
+                    disabled={!checkTimeWindow(selectedChallenge.active_from_time, selectedChallenge.active_to_time)}
                   />
                 </div>
                 <button
                   className="btn btn-primary btn-block btn-large"
                   onClick={() => handleFieldSubmit(selectedChallenge)}
-                  disabled={submitting || !fieldValue}
+                  disabled={submitting || !fieldValue || !checkTimeWindow(selectedChallenge.active_from_time, selectedChallenge.active_to_time)}
                 >
                   {submitting ? <span className="loading-spinner" /> : '📝 Spremi napredak'}
                 </button>
@@ -738,7 +839,7 @@ export default function IzazoviScreen() {
                     <button
                       className="btn btn-primary btn-block btn-large"
                       onClick={() => handlePhotoSubmit(selectedChallenge)}
-                      disabled={submitting || !photoFile}
+                      disabled={submitting || !photoFile || !checkTimeWindow(selectedChallenge.active_from_time, selectedChallenge.active_to_time)}
                       style={{ marginTop: 16 }}
                     >
                       {submitting ? <span className="loading-spinner" /> : '📸 Pošalji dokaz'}

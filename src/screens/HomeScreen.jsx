@@ -72,13 +72,13 @@ function getGreetingData() {
 }
 
 export default function HomeScreen({ onNavigate }) {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [animatedXp, setAnimatedXp] = useState(0);
   const [countdown, setCountdown] = useState('');
   const [dailyQuote, setDailyQuote] = useState(null);
   const [levelInfo, setLevelInfo] = useState({ name: 'Početnik', icon: '🐣' });
-  const [challengesRatio, setChallengesRatio] = useState({ completed: 0, total: 0 });
+  const [achievementsRatio, setAchievementsRatio] = useState({ unlocked: 0, total: 0 });
   const [arenaEnabled, setArenaEnabled] = useState(false);
   const [showLevelProgression, setShowLevelProgression] = useState(false);
   const [greeting] = useState(() => getGreetingData());
@@ -196,42 +196,78 @@ export default function HomeScreen({ onNavigate }) {
         });
       }
 
-      // 3. Fetch challenges ratio (completed / total)
+      // 3. Fetch challenges (for auto-complete) & achievements ratio
       if (profile) {
         const todayStr = getLocalDateString();
-        const [chalRes, ucRes] = await Promise.all([
+        const [chalRes, ucRes, totalAchRes, userAchRes] = await Promise.all([
           supabase
             .from('challenges')
-            .select('id, is_daily')
+            .select('id, is_daily, active_from_time, active_to_time, auto_complete_on_open, title, xp_reward, target_count')
             .eq('visibility', 'visible'),
           supabase
             .from('user_challenges')
             .select('challenge_id, is_completed, date')
+            .eq('user_id', profile.id),
+          supabase
+            .from('achievements')
+            .select('id')
+            .neq('visibility', 'hidden'),
+          supabase
+            .from('user_achievements')
+            .select('achievement_id')
             .eq('user_id', profile.id)
         ]);
 
         const activeChalsList = chalRes.data || [];
         const userChalsList = ucRes.data || [];
 
-        // Denominator: all visible daily challenges + visible non-daily challenges that are NOT completed yet, OR completed today
-        const activeChallengesToday = activeChalsList.filter(c => {
-          if (c.is_daily) return true;
-          const completedRecord = userChalsList.find(uc => uc.challenge_id === c.id && uc.is_completed);
-          if (!completedRecord) return true;
-          return completedRecord.date === todayStr;
-        });
+        // Auto-complete challenges that are due
+        const localTime = new Date().toLocaleTimeString('en-US', { hour12: false, timeZone: 'Europe/Zagreb' });
+        let didAutoCompleteAny = false;
 
-        const totalVisible = activeChallengesToday.length;
+        for (const chal of activeChalsList) {
+          if (chal.auto_complete_on_open && chal.active_from_time && chal.active_to_time) {
+            const alreadyCompleted = userChalsList.some(uc => uc.challenge_id === chal.id && uc.is_completed && uc.date === todayStr);
+            if (!alreadyCompleted) {
+              const from = chal.active_from_time;
+              const to = chal.active_to_time;
+              let inTimeWindow = false;
+              if (from <= to) {
+                inTimeWindow = (localTime >= from && localTime <= to);
+              } else {
+                inTimeWindow = (localTime >= from || localTime <= to);
+              }
 
-        // Numerator: completed today (either a daily challenge completed today, or a non-daily challenge completed today)
-        const completedTodayIds = new Set(
-          userChalsList
-            .filter(uc => uc.is_completed && uc.date === todayStr && activeChalsList.some(vc => vc.id === uc.challenge_id))
-            .map(uc => uc.challenge_id)
-        );
-        const completed = completedTodayIds.size;
+              if (inTimeWindow) {
+                console.log(`Auto-completing: ${chal.title}`);
+                await supabase.from('user_challenges').upsert({
+                  user_id: profile.id,
+                  challenge_id: chal.id,
+                  progress: chal.target_count || 1,
+                  is_completed: true,
+                  completed_at: new Date().toISOString(),
+                  date: todayStr
+                }, { onConflict: 'user_id,challenge_id,date' });
 
-        setChallengesRatio({ completed, total: totalVisible });
+                await supabase.rpc('award_xp', {
+                  p_user_id: profile.id,
+                  p_xp_amount: (chal.xp_reward || 10) * (chal.target_count || 1)
+                });
+
+                didAutoCompleteAny = true;
+              }
+            }
+          }
+        }
+
+        if (didAutoCompleteAny) {
+          await refreshProfile();
+        }
+
+        // Set achievements ratio
+        const totalCount = totalAchRes.data ? totalAchRes.data.length : 0;
+        const unlockedCount = userAchRes.data ? userAchRes.data.length : 0;
+        setAchievementsRatio({ unlocked: unlockedCount, total: totalCount });
       }
 
       // 4. Fetch Arena Enabled setting
@@ -257,11 +293,11 @@ export default function HomeScreen({ onNavigate }) {
     { icon: <span>{levelInfo.icon}</span>, value: levelInfo.name, label: `Razina ${level}`, bg: '#dbeafe', color: '#3b82f6', isLevel: true },
     { 
       icon: <EmojiEventsIcon />, 
-      value: `${challengesRatio.completed} / ${challengesRatio.total}`, 
-      label: 'Izazovi', 
+      value: `${achievementsRatio.unlocked} / ${achievementsRatio.total}`, 
+      label: 'Postignuća', 
       bg: '#ccfbf1', 
       color: '#0d9488',
-      onClick: () => onNavigate(1)
+      onClick: () => onNavigate(4)
     },
     { icon: <BoltIcon />, value: `${profile?.xp || 0} ⚡`, label: 'Ukupno XP', bg: '#ffedd5', color: '#f07147' },
   ];
