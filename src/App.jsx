@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import posthog from 'posthog-js';
 import LoginPage from './pages/LoginPage';
 import SidebarNav from './components/layout/SidebarNav';
 import BottomNav from './components/layout/BottomNav';
@@ -36,6 +37,15 @@ function AppShell() {
   const [navValue, setNavValue] = useState(0);
   const [toasts, setToasts] = useState([]);
   const [arenaEnabled, setArenaEnabled] = useState(false);
+
+  // Track app opens / session starts
+  useEffect(() => {
+    posthog.capture('app_opened', {
+      screen_name: SCREEN_TITLES[0],
+      hour_of_day: new Date().getHours(),
+      day_of_week: new Date().getDay(),
+    });
+  }, []);
 
   // Check session persistence (90 days)
   useEffect(() => {
@@ -82,6 +92,11 @@ function AppShell() {
 
   const handleNavigate = (idx) => {
     setNavValue(idx);
+    // Track screen changes for DAU/session analysis
+    posthog.capture('screen_viewed', {
+      screen_index: idx,
+      screen_name: SCREEN_TITLES[idx] || 'Unknown',
+    });
   };
 
   const handleAdmin = () => {

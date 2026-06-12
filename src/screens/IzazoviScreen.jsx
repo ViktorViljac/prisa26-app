@@ -157,8 +157,10 @@ export default function IzazoviScreen() {
     try {
       const today = getLocalDateString();
       const existing = getProgress(challenge.id);
-      const newProgress = Math.min((existing?.progress || 0) + 1, challenge.target_count);
+      const prevProgress = existing?.progress || 0;
+      const newProgress = Math.min(prevProgress + 1, challenge.target_count);
       const isDone = newProgress >= challenge.target_count;
+      const prevLevel = Math.floor((profile.xp || 0) / 500) + 1;
 
       const { error } = await supabase.from('user_challenges').upsert({
         user_id: profile.id,
@@ -170,7 +172,7 @@ export default function IzazoviScreen() {
       }, { onConflict: 'user_id,challenge_id,date' });
 
       if (!error) {
-        const increment = newProgress - (existing?.progress || 0);
+        const increment = newProgress - prevProgress;
         if (increment > 0) {
           await supabase.rpc('award_xp', {
             p_user_id: profile.id,
@@ -178,28 +180,59 @@ export default function IzazoviScreen() {
           });
         }
 
+        // Track every tap — core research metric
+        posthog.capture('habit_tapped', {
+          habit_id: challenge.id,
+          habit_title: challenge.title,
+          habit_category: challenge.challenge_categories?.name || 'Unknown',
+          verification_type: 'self_report',
+          progress_before: prevProgress,
+          progress_after: newProgress,
+          target: challenge.target_count,
+          unit: challenge.unit,
+          xp_per_tap: challenge.xp_reward,
+          date: today,
+          from_card: fromCard,
+          is_completed: isDone,
+        });
+
         if (isDone) {
           setJustDoneId(challenge.id);
           setTimeout(() => setJustDoneId(null), 1500);
-          posthog.capture('challenge_completed', {
-            challenge_id: challenge.id,
-            challenge_title: challenge.title,
-            xp_reward: challenge.xp_reward,
+          posthog.capture('habit_completed', {
+            habit_id: challenge.id,
+            habit_title: challenge.title,
+            habit_category: challenge.challenge_categories?.name || 'Unknown',
             verification_type: 'self_report',
-          });
-        } else {
-          posthog.capture('challenge_progress', {
-            challenge_id: challenge.id,
-            progress: newProgress,
-            target: challenge.target_count,
+            xp_reward: challenge.xp_reward,
+            target_count: challenge.target_count,
+            date: today,
           });
         }
+
         await refreshProfile();
+
+        // Detect level up
+        const freshProfile = await supabase.from('profiles').select('xp, level').eq('id', profile.id).single();
+        if (freshProfile.data) {
+          const newLevel = Math.floor((freshProfile.data.xp || 0) / 500) + 1;
+          if (newLevel > prevLevel) {
+            posthog.capture('level_up', {
+              level_from: prevLevel,
+              level_to: newLevel,
+              total_xp: freshProfile.data.xp,
+            });
+          }
+        }
+
         const { data } = await supabase.from('user_challenges').select('*').eq('user_id', profile.id);
         if (data) setUserChallenges(data);
+      } else {
+        posthog.capture('app_error', { context: 'self_report_upsert', error: error.message });
       }
     } catch (err) {
       console.error('Challenge completion error:', err);
+      posthog.capture('app_error', { context: 'self_report_handler', error: err.message });
     }
     if (fromCard) {
       setTappingId(null);
@@ -216,7 +249,8 @@ export default function IzazoviScreen() {
       const today = getLocalDateString();
       const numVal = parseInt(fieldValue) || 0;
       const existing = getProgress(challenge.id);
-      const newProgress = Math.min((existing?.progress || 0) + numVal, challenge.target_count);
+      const prevProgress = existing?.progress || 0;
+      const newProgress = Math.min(prevProgress + numVal, challenge.target_count);
       const isDone = newProgress >= challenge.target_count;
 
       await supabase.from('user_challenges').upsert({
@@ -228,7 +262,7 @@ export default function IzazoviScreen() {
         date: today,
       }, { onConflict: 'user_id,challenge_id,date' });
 
-      const increment = newProgress - (existing?.progress || 0);
+      const increment = newProgress - prevProgress;
       if (increment > 0) {
         await supabase.rpc('award_xp', {
           p_user_id: profile.id,
@@ -236,19 +270,32 @@ export default function IzazoviScreen() {
         });
       }
 
+      // Track every field submission
+      posthog.capture('habit_tapped', {
+        habit_id: challenge.id,
+        habit_title: challenge.title,
+        habit_category: challenge.challenge_categories?.name || 'Unknown',
+        verification_type: 'field_input',
+        progress_before: prevProgress,
+        progress_after: newProgress,
+        target: challenge.target_count,
+        unit: challenge.unit,
+        field_value: numVal,
+        xp_per_unit: challenge.xp_reward,
+        date: today,
+        is_completed: isDone,
+      });
+
       if (isDone) {
-        posthog.capture('challenge_completed', {
-          challenge_id: challenge.id,
-          challenge_title: challenge.title,
-          xp_reward: challenge.xp_reward,
+        posthog.capture('habit_completed', {
+          habit_id: challenge.id,
+          habit_title: challenge.title,
+          habit_category: challenge.challenge_categories?.name || 'Unknown',
           verification_type: 'field_input',
+          xp_reward: challenge.xp_reward,
           field_value: numVal,
-        });
-      } else {
-        posthog.capture('challenge_progress', {
-          challenge_id: challenge.id,
-          progress: newProgress,
-          target: challenge.target_count,
+          target_count: challenge.target_count,
+          date: today,
         });
       }
 
@@ -258,6 +305,7 @@ export default function IzazoviScreen() {
       setFieldValue('');
     } catch (err) {
       console.error('Field submit error:', err);
+      posthog.capture('app_error', { context: 'field_submit_handler', error: err.message });
     }
     setSubmitting(false);
     setSelectedChallenge(null);
@@ -304,9 +352,22 @@ export default function IzazoviScreen() {
         return;
       }
 
-      posthog.capture('challenge_photo_submitted', {
-        challenge_id: challenge.id,
-        challenge_title: challenge.title,
+      posthog.capture('habit_tapped', {
+        habit_id: challenge.id,
+        habit_title: challenge.title,
+        habit_category: challenge.challenge_categories?.name || 'Unknown',
+        verification_type: 'photo_upload',
+        file_size_kb: Math.round(photoFile.size / 1024),
+        date: today,
+        is_completed: false, // pending admin approval
+      });
+      posthog.capture('habit_photo_submitted', {
+        habit_id: challenge.id,
+        habit_title: challenge.title,
+        habit_category: challenge.challenge_categories?.name || 'Unknown',
+        xp_reward: challenge.xp_reward,
+        file_size_kb: Math.round(photoFile.size / 1024),
+        date: today,
       });
 
       const { data } = await supabase.from('user_challenges').select('*').eq('user_id', profile.id);
@@ -316,6 +377,7 @@ export default function IzazoviScreen() {
       setPhotoPreview(null);
     } catch (err) {
       console.error('Photo submit error:', err);
+      posthog.capture('app_error', { context: 'photo_submit_handler', error: err.message });
       alert('Neočekivana greška. Pokušaj ponovo.');
     }
     setSubmitting(false);
@@ -477,6 +539,14 @@ export default function IzazoviScreen() {
                 // For non-self-report or multi-target self-report that needs context: open drawer
                 if (!isDone && !isSelfReport) {
                   setSelectedChallenge(challenge);
+                  posthog.capture('habit_drawer_opened', {
+                    habit_id: challenge.id,
+                    habit_title: challenge.title,
+                    habit_category: challenge.challenge_categories?.name || 'Unknown',
+                    verification_type: verifyType,
+                    current_progress: progress,
+                    target: challenge.target_count,
+                  });
                 }
               }}
             >

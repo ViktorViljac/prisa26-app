@@ -3,6 +3,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import SportsKabaddiIcon from '@mui/icons-material/SportsKabaddi';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
+import posthog from 'posthog-js';
 
 const NAV_ITEMS = [
   { label: 'Početna', icon: HomeIcon, index: 0 },
@@ -21,7 +22,14 @@ export default function BottomNav({ navValue, setNavValue, arenaEnabled }) {
         <button
           key={item.index}
           className={`bottom-nav-item ${navValue === item.index ? 'active' : ''}`}
-          onClick={() => setNavValue(item.index)}
+          onClick={() => {
+            setNavValue(item.index);
+            posthog.capture('screen_viewed', {
+              screen_index: item.index,
+              screen_name: item.label,
+              source: 'bottom_nav',
+            });
+          }}
         >
           <item.icon />
           <span className="bottom-nav-label">{item.label}</span>
