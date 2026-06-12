@@ -133,14 +133,22 @@ export default function IzazoviScreen() {
 
   const today = getLocalDateString();
 
-  const completed = userChallenges.filter(uc => uc.is_completed && uc.date === today).length;
+  // Count unique VISIBLE challenges completed today (deduplicated by challenge_id)
+  const visibleChallengeIds = new Set(
+    challenges.filter(c => c.visibility === 'visible').map(c => c.id)
+  );
+  const completedTodayIds = new Set(
+    userChallenges
+      .filter(uc => uc.is_completed && uc.date === today && visibleChallengeIds.has(uc.challenge_id))
+      .map(uc => uc.challenge_id)
+  );
+  const completed = completedTodayIds.size;
+  const totalVisible = visibleChallengeIds.size;
 
   const getProgress = (challengeId) => {
     // Always filter by today — each day is a fresh slate
-    // Non-daily challenges (e.g. photo) still reset per day
     return userChallenges.find(u => u.challenge_id === challengeId && u.date === today) || null;
   };
-
 
   const handleSelfReport = async (challenge, fromCard = false) => {
     if (!profile) return;
@@ -399,7 +407,7 @@ export default function IzazoviScreen() {
       {/* Header */}
       <div className="challenges-header">
         <div className="challenges-count">
-          <span>{completed}</span> / {challenges.filter(c => c.visibility === 'visible').length} odrađenih navika
+          <span>{completed}</span> / {totalVisible} odrađenih navika
         </div>
       </div>
 
