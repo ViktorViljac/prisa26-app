@@ -3,18 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import posthog from 'posthog-js';
 import LockIcon from '@mui/icons-material/Lock';
-import StarsIcon from '@mui/icons-material/Stars';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return '';
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `Kreće: ${day}.${month}.`;
-}
 
 export default function PostignucaScreen() {
   const { profile, refreshProfile } = useAuth();
@@ -63,7 +53,7 @@ export default function PostignucaScreen() {
         
         // Prevent unlocking coming_soon or hidden achievements
         if (ach.visibility === 'coming_soon') {
-          setCodeError('Ovaj izazov još nije dostupan (uskoro dolazi)!');
+          setCodeError('Ovo postignuće još nije dostupno (uskoro dolazi)!');
           setSubmitting(false);
           return;
         }
@@ -93,10 +83,12 @@ export default function PostignucaScreen() {
         if (updateErr) throw updateErr;
 
         // Unlock achievement
-        await supabase.from('user_achievements').insert({
+        const { error: insertErr } = await supabase.from('user_achievements').insert({
           user_id: profile.id,
           achievement_id: ach.id,
         });
+
+        if (insertErr) throw insertErr;
 
         // Award XP
         if (ach.xp_reward > 0) {
@@ -136,7 +128,7 @@ export default function PostignucaScreen() {
 
       // Prevent unlocking coming_soon or hidden achievements
       if (ach.visibility === 'coming_soon') {
-        setCodeError('Ovaj izazov još nije dostupan (uskoro dolazi)!');
+        setCodeError('Ovo postignuće još nije dostupno (uskoro dolazi)!');
         setSubmitting(false);
         return;
       }
@@ -195,7 +187,7 @@ export default function PostignucaScreen() {
       {/* Header */}
       <div className="achievements-header" style={{ marginBottom: 16 }}>
         <div className="achievements-count">
-          <span>{unlockedCount}</span> / {visibleAchievements.length} izazova
+          <span>{unlockedCount}</span> / {visibleAchievements.length} postignuća
         </div>
       </div>
 
@@ -227,7 +219,7 @@ export default function PostignucaScreen() {
       {/* Unlocked Section */}
       <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
         <CheckCircleIcon style={{ color: 'var(--prisa-teal)' }} />
-        Otključani izazovi ({unlockedList.length})
+        Otključana postignuća ({unlockedList.length})
       </h2>
       
       {unlockedList.length === 0 ? (
@@ -240,7 +232,7 @@ export default function PostignucaScreen() {
           color: 'var(--text-muted)',
           marginBottom: 32
         }}>
-          Još nisi otključao nijedan izazov. Kreni rješavati navike ili aktiviraj kodove! 🚀
+          Još nisi otključao nijedno postignuće. Kreni rješavati navike ili aktiviraj kodove! 🚀
         </div>
       ) : (
         <div className="achievements-compact-grid" style={{ marginBottom: 32 }}>
@@ -301,7 +293,7 @@ export default function PostignucaScreen() {
       {/* Locked Section */}
       <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', fontWeight: 800, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
         <LockIcon style={{ color: 'var(--text-muted)' }} />
-        Zaključani izazovi ({lockedList.length})
+        Zaključana postignuća ({lockedList.length})
       </h2>
 
       {lockedList.length === 0 ? (
@@ -315,7 +307,7 @@ export default function PostignucaScreen() {
           fontWeight: 'bold',
           marginBottom: 32
         }}>
-          Čestitamo! Otključao si sve dostupne izazove! 🎉
+          Čestitamo! Otključao si sva dostupna postignuća! 🎉
         </div>
       ) : (
         <div className="achievements-compact-grid">
@@ -372,9 +364,9 @@ export default function PostignucaScreen() {
                   </div>
                   <div className="achievement-desc-preview" style={{ fontSize: '0.78rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textAlign: 'center', lineHeight: 1.4, width: '100%' }}>
                     {isMystery 
-                      ? 'Ovaj izazov je tajna dok ga ne otključaš!' 
+                      ? 'Ovo postignuće je tajna dok ga ne otključaš!' 
                       : isComingSoon 
-                        ? 'Ovaj izazov stiže uskoro. Budi spreman!' 
+                        ? 'Ovo postignuće stiže uskoro. Budi spreman!' 
                         : ach.description}
                   </div>
                 </div>
@@ -428,7 +420,7 @@ export default function PostignucaScreen() {
               
               <p className="achievement-dialog-desc">
                 {selectedAchievement.isMystery 
-                  ? 'Ovaj izazov je tajna dok ga ne otključaš!' 
+                  ? 'Ovo postignuće je tajna dok ga ne otključaš!' 
                   : selectedAchievement.description}
               </p>
 

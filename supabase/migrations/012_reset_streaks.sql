@@ -31,9 +31,9 @@ GRANT EXECUTE ON FUNCTION reset_inactive_streaks() TO authenticated;
 -- (requires pg_cron extension enabled in Supabase Dashboard
 --  → Database → Extensions → pg_cron)
 --
--- SELECT cron.schedule(
---   'reset-streaks-nightly',
---   '0 2 * * *',   -- every day at 02:00 UTC (04:00 Zagreb time)
---   'SELECT reset_inactive_streaks()'
--- );
+ SELECT cron.schedule(
+  'reset-streaks-nightly',
+ '0 2 * * *',   -- every day at 02:00 UTC (04:00 Zagreb time)
+  'SELECT reset_inactive_streaks()'
+);
 -- ─────────────────────────────────────────────────────────────

@@ -85,6 +85,7 @@ export default function HomeScreen({ onNavigate }) {
   const [progressPct, setProgressPct] = useState(0);
 
   const [progression, setProgression] = useState({ xpIntoLevel: 0, xpForNext: 500 });
+  const [dbLevels, setDbLevels] = useState(DEFAULT_LEVELS);
 
   const totalXp = profile?.xp || 0;
   const level = profile?.level || 1;
@@ -177,6 +178,7 @@ export default function HomeScreen({ onNavigate }) {
         .select('*')
         .order('level', { ascending: true });
       if (levels) {
+        if (levels.length > 0) setDbLevels(levels);
         const match = levels.find(l => l.level === currentLevel);
         if (match) setLevelInfo(match);
         else setLevelInfo({ name: `Razina ${currentLevel}`, icon: '⭐', xp: (currentLevel - 1) * 500 });
@@ -586,7 +588,7 @@ export default function HomeScreen({ onNavigate }) {
                 }} />
 
                 {/* Levels mapping */}
-                {DEFAULT_LEVELS.map((item) => {
+                {dbLevels.map((item) => {
                   const isActive = item.level === level;
                   const isUnlocked = item.level < level;
                   const isLocked = item.level > level;

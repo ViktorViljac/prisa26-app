@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { label: 'Predaje (Foto/Tekst)', path: 'submissions', icon: PhotoLibraryIcon },
   { label: 'Korisnici', path: 'users', icon: PeopleIcon },
   { label: 'Navike', path: 'challenges', icon: EmojiEventsIcon },
-  { label: 'Izazovi', path: 'achievements', icon: MilitaryTechIcon },
+  { label: 'Postignuća', path: 'achievements', icon: MilitaryTechIcon },
   { label: 'Kategorije', path: 'categories', icon: CategoryIcon },
   { label: 'Razine', path: 'levels', icon: StarIcon },
   { label: 'Timovi', path: 'teams', icon: GroupsIcon },
