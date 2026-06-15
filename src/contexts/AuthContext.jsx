@@ -10,69 +10,99 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*, teams(id, name, color, icon)')
-      .eq('id', userId)
-      .single();
-    if (!error && data) {
-      // Auto-reset streak if user missed a day
-      if (data.streak > 0 && data.last_active_date) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const parts = data.last_active_date.split('-');
-        const lastActive = new Date(parts[0], parts[1] - 1, parts[2]);
-        lastActive.setHours(0, 0, 0, 0);
-        const daysDiff = Math.floor((today - lastActive) / 86400000);
-        if (daysDiff > 1) {
-          // More than 1 day missed — reset streak
-          await supabase
-            .from('profiles')
-            .update({ streak: 0, updated_at: new Date().toISOString() })
-            .eq('id', userId);
-          data.streak = 0;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*, teams(id, name, color, icon)')
+        .eq('id', userId)
+        .single();
+      if (error) throw error;
+      if (data) {
+        // Auto-reset streak if user missed a day
+        if (data.streak > 0 && data.last_active_date) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const parts = data.last_active_date.split('-');
+          if (parts.length === 3) {
+            const lastActive = new Date(parts[0], parts[1] - 1, parts[2]);
+            lastActive.setHours(0, 0, 0, 0);
+            const daysDiff = Math.floor((today - lastActive) / 86400000);
+            if (daysDiff > 1) {
+              // More than 1 day missed — reset streak
+              await supabase
+                .from('profiles')
+                .update({ streak: 0, updated_at: new Date().toISOString() })
+                .eq('id', userId);
+              data.streak = 0;
+            }
+          }
         }
-      }
 
-      setProfile(data);
-      // Identify user in PostHog for analytics
-      try {
-        posthog.identify(data.id, {
-          name: data.name,
-          email: data.email,
-          level: data.level,
-          xp: data.xp,
-          team: data.teams?.name || null,
-          role: data.role,
-        });
-      } catch (_) { /* PostHog not initialized */ }
+        setProfile(data);
+        // Identify user in PostHog for analytics
+        try {
+          posthog.identify(data.id, {
+            name: data.name,
+            email: data.email,
+            level: data.level,
+            xp: data.xp,
+            team: data.teams?.name || null,
+            role: data.role,
+          });
+        } catch (_) { /* PostHog not initialized */ }
+      }
+      return data;
+    } catch (err) {
+      console.error("Error in fetchProfile:", err);
+      return null;
     }
-    return data;
   }, []);
 
   useEffect(() => {
+    let active = true;
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!active) return;
+
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        }
+      } catch (err) {
+        console.error("Error getting session/profile on mount:", err);
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+    checkSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
+        if (!active) return;
+        setLoading(true);
+        try {
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            await fetchProfile(session.user.id);
+          } else {
+            setProfile(null);
+          }
+        } catch (err) {
+          console.error("Error in onAuthStateChange:", err);
+        } finally {
+          if (active) setLoading(false);
         }
-        setLoading(false);
       }
     );
-    return () => subscription.unsubscribe();
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, [fetchProfile]);
 
   // Subscribe to real-time changes on the current user's profile
