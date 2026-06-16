@@ -7,10 +7,15 @@ const PODIUM_CLASSES = ['gold', 'silver', 'bronze'];
 
 const formatName = (name) => {
   if (!name) return 'Korisnik';
+  let formatted = name;
   if (name.includes('.')) {
-    return name.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+    formatted = name.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
   }
-  return name;
+  const parts = formatted.trim().split(/\s+/);
+  if (parts.length <= 1) return formatted;
+  const firstName = parts[0];
+  const initials = parts.slice(1).map(p => `${p.charAt(0).toUpperCase()}.`).join(' ');
+  return `${firstName} ${initials}`;
 };
 
 export default function LeaderboardScreen() {
