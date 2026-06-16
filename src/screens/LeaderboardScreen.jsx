@@ -155,6 +155,16 @@ export default function LeaderboardScreen() {
                 </div>
                 <div className="rank-info">
                   <div className="rank-name">{formatName(user.name)}{isMe && ' (ti)'}</div>
+                  <span 
+                    className="rank-team-inline-mobile"
+                    style={{
+                      color: user.teams?.color || 'var(--text-muted)',
+                      backgroundColor: user.teams ? `${user.teams.color}15` : 'rgba(0,0,0,0.04)',
+                      border: `1px solid ${user.teams ? `${user.teams.color}30` : 'rgba(0,0,0,0.08)'}`
+                    }}
+                  >
+                    {user.teams ? `${user.teams.icon || '🏳️'} ${user.teams.name}` : 'Bez tima'}
+                  </span>
                 </div>
                 <div className="rank-team-col">
                   <div 
@@ -186,8 +196,10 @@ export default function LeaderboardScreen() {
               return (
                 <div key={team.id} className="team-card hover-scale" style={{ position: 'relative', overflow: 'hidden' }}>
                   <div className="team-card-icon">{team.icon || '🏳️'}</div>
-                  <div className="team-card-name">{team.name}</div>
-                  <div className="team-card-members">{team.member_count || 0} članova</div>
+                  <div className="team-card-info">
+                    <div className="team-card-name">{team.name}</div>
+                    <div className="team-card-members">{team.member_count || 0} članova</div>
+                  </div>
                   <div className="team-card-score" style={{ color: team.color || 'var(--prisa-orange)' }}>
                     {team.score || 0} bodova
                   </div>
