@@ -28,7 +28,7 @@ export default function LeaderboardScreen() {
     const fetchData = async (showSpinner = false) => {
       if (showSpinner) setLoading(true);
       const [lbRes, teamsRes] = await Promise.all([
-        supabase.from('profiles').select('id, name, avatar_url, xp, level, streak, team_id, teams(name, color, icon)').eq('is_banned', false).eq('hide_from_leaderboard', false).order('xp', { ascending: false }).order('name', { ascending: true }).limit(50),
+        supabase.from('profiles').select('id, name, avatar_url, xp, level, streak, team_id, teams(name, color, icon)').eq('is_banned', false).eq('hide_from_leaderboard', false).order('xp', { ascending: false }).order('name', { ascending: true }).limit(150),
         supabase.from('teams').select('*'),
       ]);
       
