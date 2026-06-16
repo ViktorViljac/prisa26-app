@@ -69,10 +69,11 @@ export function AuthProvider({ children }) {
 
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          // Non-blocking background fetch
+          fetchProfile(session.user.id);
         }
       } catch (err) {
-        console.error("Error getting session/profile on mount:", err);
+        console.error("Error getting session on mount:", err);
       } finally {
         if (active) setLoading(false);
       }
@@ -83,11 +84,11 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!active) return;
-        setLoading(true);
         try {
           setUser(session?.user ?? null);
           if (session?.user) {
-            await fetchProfile(session.user.id);
+            // Non-blocking background fetch
+            fetchProfile(session.user.id);
           } else {
             setProfile(null);
           }
