@@ -1606,9 +1606,32 @@ body {
 .challenge-card.completed {
   opacity: 0.7;
   border-left: 3px solid var(--prisa-teal);
+  cursor: default;
+}
+.challenge-card.completed:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(0,0,0,0.06);
 }
 .challenge-card.self-report-card {
-  cursor: default;
+  cursor: pointer;
+}
+.challenge-card.self-report-card:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-sm);
+}
+.challenge-card.locked-card {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+.challenge-card.locked-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(0,0,0,0.06);
+}
+.challenge-card.tapping {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 /* One-tap button on self-report challenge cards */
@@ -1673,7 +1696,10 @@ body {
 }
 .challenge-icon .MuiSvgIcon-root { font-size: 22px; }
 
-.challenge-content { flex: 1; }
+.challenge-content {
+  flex: 1;
+  min-width: 0;
+}
 .challenge-title {
   font-family: var(--font-heading);
   font-size: 0.95rem;
@@ -1685,6 +1711,8 @@ body {
   font-size: 0.8rem;
   color: var(--text-gray);
   margin-bottom: 10px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .challenge-progress-bar {
@@ -2717,6 +2745,24 @@ body {
   .stats-grid { grid-template-columns: 1fr; }
   .achievements-grid { grid-template-columns: 1fr; }
   .achievements-compact-grid { grid-template-columns: 1fr; }
+  
+  .challenge-card {
+    padding: 14px 12px;
+    gap: 12px;
+  }
+  .challenge-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  .challenge-icon .MuiSvgIcon-root {
+    font-size: 18px;
+  }
+  .card-tap-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
 }
 
 /* ==========================================================================

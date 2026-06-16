@@ -632,10 +632,19 @@ export default function IzazoviScreen() {
           return (
             <div
               key={challenge.id}
-              className={`challenge-card ${isDone ? 'completed' : ''} ${isSelfReport && !isDone ? 'self-report-card' : ''}`}
-              onClick={() => {
-                // For non-self-report or multi-target self-report that needs context: open drawer
-                if (!isDone && !isSelfReport) {
+              className={`challenge-card ${isDone ? 'completed' : ''} ${isSelfReport && !isDone && isTimeValid ? 'self-report-card' : ''} ${isSelfReport && !isDone && !isTimeValid ? 'locked-card' : ''} ${isTapping ? 'tapping' : ''}`}
+              onClick={(e) => {
+                // Ignore clicks if they target a link inside the card
+                if (e.target.tagName === 'A' || e.target.closest('a')) {
+                  return;
+                }
+
+                if (isDone) return;
+
+                if (isSelfReport) {
+                  if (!isTimeValid) return;
+                  if (!isTapping) handleSelfReport(challenge, true);
+                } else {
                   setSelectedChallenge(challenge);
                   posthog.capture('habit_drawer_opened', {
                     habit_id: challenge.id,
