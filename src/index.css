@@ -2176,7 +2176,7 @@ body {
   font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-muted);
-  width: 28px;
+  width: 38px;
   text-align: center;
 }
 .rank-avatar {
@@ -2779,7 +2779,7 @@ body {
     gap: 10px;
   }
   .rank-number {
-    width: 24px;
+    width: 36px;
     font-size: 0.95rem;
   }
   .rank-avatar {
