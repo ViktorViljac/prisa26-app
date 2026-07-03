@@ -125,10 +125,10 @@ export default function AdminDashboard() {
 
       if (updateErr) throw updateErr;
 
-      // 2. Award XP to the user
+      // 2. Award XP to the user — use xp_reward * target_count for multi-step challenges
       const { error: rpcErr } = await supabase.rpc('award_xp', {
         p_user_id: submission.user_id,
-        p_xp_amount: submission.challenges?.xp_reward || 10,
+        p_xp_amount: (submission.challenges?.xp_reward || 10) * (submission.challenges?.target_count || 1),
       });
 
       if (rpcErr) throw rpcErr;

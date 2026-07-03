@@ -37,13 +37,18 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      if (mode === 'login') {
-        await signIn(email, password);
-      } else {
-        await signUp(email, password, name);
-      }
+      // 10-second timeout — Supabase may be blocked in some countries (e.g. Russia)
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+      );
+      const action = mode === 'login'
+        ? signIn(email, password)
+        : signUp(email, password, name);
+      await Promise.race([action, timeout]);
     } catch (err) {
-      if (err.message?.includes('Invalid login')) {
+      if (err.message === 'TIMEOUT' || err.message?.includes('fetch') || err.message?.includes('network') || err.message?.includes('Failed to fetch')) {
+        setError('Ne možemo se spojiti na server. Provjeri internet vezu ili pokušaj VPN.');
+      } else if (err.message?.includes('Invalid login')) {
         setError('Pogrešan email ili lozinka.');
       } else if (err.message?.includes('already registered')) {
         setError('Ovaj email je već registriran.');

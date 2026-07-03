@@ -92,9 +92,10 @@ export default function AdminSubmissions() {
 
       if (updateErr) throw updateErr;
 
+      // Award XP — multiply by target_count for multi-step challenges
       await supabase.rpc('award_xp', {
         p_user_id: item.user_id,
-        p_xp_amount: item.challenges?.xp_reward || 10,
+        p_xp_amount: (item.challenges?.xp_reward || 10) * (item.challenges?.target_count || 1),
       });
 
       await fetchData();

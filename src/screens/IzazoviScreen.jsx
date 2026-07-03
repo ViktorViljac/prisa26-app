@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { compressImage } from '../lib/imageCompressor';
 import posthog from 'posthog-js';
 import TimerIcon from '@mui/icons-material/Timer';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -107,15 +108,21 @@ export default function IzazoviScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [tappingId, setTappingId] = useState(null); // tracks which card is being tapped
   const [justDoneId, setJustDoneId] = useState(null); // for success flash animation
+  const [loadingData, setLoadingData] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+  const inFlightTaps = useRef(new Set());
 
   // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    setLoadingData(true);
+    setFetchError(false);
+    try {
       const [catRes, chalRes, ucRes] = await Promise.all([
         supabase.from('challenge_categories').select('*').order('sort_order'),
         supabase.from('challenges').select('*, challenge_categories(name, icon, gradient_start, gradient_end)').in('visibility', ['visible', 'coming_soon', 'mystery']),
         profile ? supabase.from('user_challenges').select('*').eq('user_id', profile.id) : { data: [] },
       ]);
+      if (catRes.error && !catRes.data) { setFetchError(true); setLoadingData(false); return; }
       if (catRes.data) setCategories(catRes.data);
       if (chalRes.data) setChallenges(chalRes.data);
       if (ucRes.data) setUserChallenges(ucRes.data);
@@ -167,7 +174,15 @@ export default function IzazoviScreen() {
           if (freshUc) setUserChallenges(freshUc);
         }
       }
-    };
+    } catch (err) {
+      console.error('Failed to load navike data:', err);
+      setFetchError(true);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [profile]);
 
@@ -239,6 +254,8 @@ export default function IzazoviScreen() {
 
   const handleSelfReport = async (challenge, fromCard = false) => {
     if (!profile) return;
+    if (inFlightTaps.current.has(challenge.id)) return;
+    inFlightTaps.current.add(challenge.id);
     if (fromCard) {
       setTappingId(challenge.id);
     } else {
@@ -324,17 +341,21 @@ export default function IzazoviScreen() {
     } catch (err) {
       console.error('Challenge completion error:', err);
       posthog.capture('app_error', { context: 'self_report_handler', error: err.message });
-    }
-    if (fromCard) {
-      setTappingId(null);
-    } else {
-      setSubmitting(false);
-      setSelectedChallenge(null);
+    } finally {
+      inFlightTaps.current.delete(challenge.id);
+      if (fromCard) {
+        setTappingId(null);
+      } else {
+        setSubmitting(false);
+        setSelectedChallenge(null);
+      }
     }
   };
 
   const handleFieldSubmit = async (challenge) => {
     if (!profile || !fieldValue) return;
+    if (inFlightTaps.current.has(challenge.id)) return;
+    inFlightTaps.current.add(challenge.id);
     setSubmitting(true);
     try {
       const today = getLocalDateString();
@@ -398,9 +419,11 @@ export default function IzazoviScreen() {
     } catch (err) {
       console.error('Field submit error:', err);
       posthog.capture('app_error', { context: 'field_submit_handler', error: err.message });
+    } finally {
+      inFlightTaps.current.delete(challenge.id);
+      setSubmitting(false);
+      setSelectedChallenge(null);
     }
-    setSubmitting(false);
-    setSelectedChallenge(null);
   };
 
   const handlePhotoSubmit = async (challenge) => {
@@ -408,13 +431,21 @@ export default function IzazoviScreen() {
     setSubmitting(true);
     try {
       const today = getLocalDateString();
-      const ext = photoFile.name.split('.').pop();
-      // Deterministic path: one file per user per challenge per day (upsert replaces it)
-      const filePath = `${profile.id}/challenge-proofs/${challenge.id}_${today}.${ext}`;
+      
+      // Compress image client-side to save egress bandwidth and storage
+      let fileToUpload = photoFile;
+      try {
+        fileToUpload = await compressImage(photoFile, 1200, 1200, 0.7);
+      } catch (compressErr) {
+        console.warn('Image compression failed, uploading original file:', compressErr);
+      }
+
+      // Always save as .jpg since compressor outputs jpeg format
+      const filePath = `${profile.id}/challenge-proofs/${challenge.id}_${today}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, photoFile, { upsert: true });
+        .upload(filePath, fileToUpload, { upsert: true });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
@@ -494,6 +525,33 @@ export default function IzazoviScreen() {
 
   return (
     <div>
+      {/* Loading state */}
+      {loadingData && (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-gray)' }}>
+          <div className="loading-spinner" style={{ width: 36, height: 36, margin: '0 auto 16px' }} />
+          <p style={{ fontSize: '0.9rem' }}>Učitavanje navika...</p>
+        </div>
+      )}
+
+      {/* Error state — network unreachable */}
+      {!loadingData && fetchError && (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: 12 }}>⚠️</div>
+          <p style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-dark)', marginBottom: 8 }}>
+            Nema veze s internetom
+          </p>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: 24, lineHeight: 1.5 }}>
+            Ne možemo učitati navike.<br />Provjeri internet vezu i pokušaj ponovo.
+          </p>
+          <button className="btn btn-primary" onClick={fetchData}>
+            Pokušaj ponovo
+          </button>
+        </div>
+      )}
+
+      {/* Main content — only show when loaded and no error */}
+      {!loadingData && !fetchError && <>
+
       {/* Header */}
       <div className="challenges-header">
         <div className="challenges-count">
@@ -860,6 +918,7 @@ export default function IzazoviScreen() {
           </div>
         )}
       </Drawer>
+      </>}
     </div>
   );
 }

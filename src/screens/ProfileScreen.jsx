@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { compressImage } from '../lib/imageCompressor';
 import posthog from 'posthog-js';
 import BoltIcon from '@mui/icons-material/Bolt';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -132,13 +133,21 @@ export default function ProfileScreen({ onLogout }) {
 
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
-      const filePath = `${profile.id}/avatar.${ext}`;
+      // Compress avatar to 400x400 max size
+      let fileToUpload = file;
+      try {
+        fileToUpload = await compressImage(file, 400, 400, 0.7);
+      } catch (compressErr) {
+        console.warn('Avatar compression failed, uploading original file:', compressErr);
+      }
+
+      // Always save as avatar.jpg since compressor outputs jpeg format
+      const filePath = `${profile.id}/avatar.jpg`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, fileToUpload, { upsert: true });
 
       if (!uploadError) {
         const { data: { publicUrl } } = supabase.storage

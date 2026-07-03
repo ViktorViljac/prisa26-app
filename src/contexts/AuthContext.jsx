@@ -114,24 +114,31 @@ export function AuthProvider({ children }) {
     }
 
     const channelId = `profile-realtime-${user.id}`;
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${user.id}`,
-        },
-        async () => {
-          await fetchProfile(user.id);
-        }
-      )
-      .subscribe();
+    let channel = null;
+    try {
+      channel = supabase
+        .channel(channelId)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${user.id}`,
+          },
+          async () => {
+            await fetchProfile(user.id);
+          }
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn('Realtime subscription failed (may be network restricted):', err?.message);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch (_) {}
+      }
     };
   }, [user, fetchProfile]);
 
