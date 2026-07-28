@@ -113,14 +113,16 @@ export default function IzazoviScreen() {
   const inFlightTaps = useRef(new Set());
 
   // Fetch data
-  const fetchData = async () => {
-    setLoadingData(true);
+  const fetchData = async (isInitial = false) => {
+    if (isInitial || categories.length === 0) {
+      setLoadingData(true);
+    }
     setFetchError(false);
     try {
       const [catRes, chalRes, ucRes] = await Promise.all([
         supabase.from('challenge_categories').select('*').order('sort_order'),
         supabase.from('challenges').select('*, challenge_categories(name, icon, gradient_start, gradient_end)').in('visibility', ['visible', 'coming_soon', 'mystery']),
-        profile ? supabase.from('user_challenges').select('*').eq('user_id', profile.id) : { data: [] },
+        profile?.id ? supabase.from('user_challenges').select('*').eq('user_id', profile.id) : { data: [] },
       ]);
       if (catRes.error && !catRes.data) { setFetchError(true); setLoadingData(false); return; }
       if (catRes.data) setCategories(catRes.data);
@@ -176,15 +178,15 @@ export default function IzazoviScreen() {
       }
     } catch (err) {
       console.error('Failed to load navike data:', err);
-      setFetchError(true);
+      if (categories.length === 0) setFetchError(true);
     } finally {
       setLoadingData(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, [profile]);
+    fetchData(true);
+  }, [profile?.id]);
 
   // Countdown
   useEffect(() => {
@@ -212,24 +214,36 @@ export default function IzazoviScreen() {
 
   const today = getLocalDateString();
 
-  // Count completed / total challenges dynamically
-  const visibleChallenges = challenges.filter(c => c.visibility === 'visible');
+  // Helper to check if a user_challenge record represents a completed/submitted habit
+  const isRecordCompleted = (uc, challenge) => {
+    if (!uc) return false;
+    if (uc.is_completed) return true;
+    if (challenge && challenge.target_count > 0 && uc.progress >= challenge.target_count) return true;
+    if (challenge && challenge.verification_type === 'photo_upload' && uc.proof_url) return true;
+    return false;
+  };
 
   // Denominator: all visible daily challenges + visible non-daily challenges that are NOT completed yet, OR completed today
   const activeChallengesToday = visibleChallenges.filter(c => {
     if (c.is_daily) return true;
-    const completedRecord = userChallenges.find(uc => uc.challenge_id === c.id && uc.is_completed);
+    const completedRecord = userChallenges.find(uc => uc.challenge_id === c.id && isRecordCompleted(uc, c));
     if (!completedRecord) return true;
-    return completedRecord.date === today;
+    return completedRecord.date === today || completedRecord.completed_at?.startsWith(today);
   });
 
   const totalVisible = activeChallengesToday.length;
 
-  // Numerator: completed today (either a daily challenge completed today, or a non-daily challenge completed today)
+  // Numerator: completed today (either daily challenge completed today, or non-daily challenge completed today)
   const completedTodayIds = new Set(
-    userChallenges
-      .filter(uc => uc.is_completed && uc.date === today && visibleChallenges.some(vc => vc.id === uc.challenge_id))
-      .map(uc => uc.challenge_id)
+    activeChallengesToday
+      .filter(vc => {
+        const uc = userChallenges.find(u => u.challenge_id === vc.id && (vc.is_daily ? u.date === today : true));
+        if (!uc) return false;
+        if (!isRecordCompleted(uc, vc)) return false;
+        if (vc.is_daily) return uc.date === today;
+        return true;
+      })
+      .map(vc => vc.id)
   );
   const completed = completedTodayIds.size;
 
