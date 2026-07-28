@@ -214,6 +214,9 @@ export default function IzazoviScreen() {
 
   const today = getLocalDateString();
 
+  // Count completed / total challenges dynamically
+  const visibleChallenges = challenges.filter(c => c.visibility === 'visible');
+
   // Helper to check if a user_challenge record represents a completed/submitted habit
   const isRecordCompleted = (uc, challenge) => {
     if (!uc) return false;
