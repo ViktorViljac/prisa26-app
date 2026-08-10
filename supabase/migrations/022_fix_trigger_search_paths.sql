@@ -172,10 +172,18 @@ BEGIN
   END IF;
 
   IF v_damage > 0 THEN
-    -- Find active boss tied to this challenge
+    -- Get the category of the challenge the user just made progress on
+    SELECT category_id INTO v_challenge_category FROM public.challenges WHERE id = NEW.challenge_id;
+
+    -- Find active bosses that are targeted by this action
     FOR v_boss IN 
-      SELECT * FROM arena_bosses 
-      WHERE challenge_id = NEW.challenge_id AND is_active = true AND current_hp > 0
+      SELECT * FROM public.arena_bosses 
+      WHERE is_active = true AND current_hp > 0
+      AND (
+        target_all = true 
+        OR challenge_id = NEW.challenge_id 
+        OR (target_category_id IS NOT NULL AND target_category_id = v_challenge_category)
+      )
     LOOP
       -- Deal damage to boss
       UPDATE arena_bosses 
