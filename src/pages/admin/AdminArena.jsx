@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { compressImage } from '../../lib/imageCompressor';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 
 export default function AdminArena() {
+  const { profile } = useAuth();
   const [arenaEnabled, setArenaEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -70,8 +72,9 @@ export default function AdminArena() {
         console.warn('Compression failed, uploading original file:', compressErr);
       }
 
+      const userId = profile?.id || 'admin';
       const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "");
-      const filePath = `bosses/${Date.now()}_${cleanName}.jpg`;
+      const filePath = `${userId}/bosses/${Date.now()}_${cleanName}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
