@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { compressImage } from '../../lib/imageCompressor';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -8,6 +9,7 @@ export default function AdminArena() {
   const [arenaEnabled, setArenaEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [categories, setCategories] = useState([]);
   const [challenges, setChallenges] = useState([]);
@@ -54,6 +56,44 @@ export default function AdminArena() {
       setBosses(bossesData);
     }
     setLoading(false);
+  };
+
+  const handleBossImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      let fileToUpload = file;
+      try {
+        fileToUpload = await compressImage(file, 800, 800, 0.7);
+      } catch (compressErr) {
+        console.warn('Compression failed, uploading original file:', compressErr);
+      }
+
+      const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\.[^/.]+$/, "");
+      const filePath = `bosses/${Date.now()}_${cleanName}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, fileToUpload, { upsert: true });
+
+      if (uploadError) {
+        alert('Greška pri prijenosu slike Bossa: ' + uploadError.message);
+        setUploadingImage(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setBoss(prev => ({ ...prev, avatar_url: publicUrl }));
+    } catch (err) {
+      console.error('Boss image upload error:', err);
+      alert('Neočekivana greška pri prijenosu slike.');
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleToggleArena = async () => {
@@ -240,10 +280,34 @@ export default function AdminArena() {
               </div>
 
               <div className="form-group">
-                <label>Avatar URL</label>
-                <input type="url" value={boss.avatar_url} onChange={e => setBoss({...boss, avatar_url: e.target.value})} placeholder="/images/boss_fire_golem.png" />
+                <label>Slika Bossa (Nalijepi URL ili Prenesi sliku s računala/mobitela)</label>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <input 
+                    type="text" 
+                    value={boss.avatar_url} 
+                    onChange={e => setBoss({...boss, avatar_url: e.target.value})} 
+                    placeholder="/images/boss_fire_golem.png ili poslužiteljski URL" 
+                    style={{ flex: 1 }}
+                  />
+                  <label className="btn btn-outline btn-sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, margin: 0, padding: '8px 12px' }}>
+                    {uploadingImage ? <span className="loading-spinner" /> : '🖼️ Prenesi sliku'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleBossImageUpload}
+                      disabled={uploadingImage}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+                {boss.avatar_url && (
+                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 12, background: '#f8fafc', padding: '8px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                    <img src={boss.avatar_url} alt="Boss preview" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid #cbd5e1' }} />
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-dark)', fontWeight: 600 }}>Pregled odabrane slike</span>
+                  </div>
+                )}
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                  Nove slike spremne za korištenje: /images/boss_fire_golem.png, /images/boss_ice_dragon.png, /images/boss_dark_knight.png
+                  Ugrađene opcije: /images/boss_fire_golem.png, /images/boss_ice_dragon.png, /images/boss_dark_knight.png
                 </span>
               </div>
 
